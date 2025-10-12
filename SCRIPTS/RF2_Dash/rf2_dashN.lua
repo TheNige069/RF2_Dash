@@ -154,26 +154,6 @@ local function updateRpm(wgt)
     wgt.values.rpm_str = string.format("%s",Hspd)
 end
 
-local function updateCell(wgt)
-    local vbat = getValue("Vbat")
-    local vcel = getValue("Vcel")
-
-    if inSimu then
-        vbat = 22.2
-        vcel = 3.66
-    end
-
-    local batPercent = math.tointeger((vcel / vbat) * 100) or 0
-
-    -- log("rf2_dash: updateCell: %s, vcel: %s, BatPercent: %s", vbat, vcel, batPercent)
-
-    wgt.values.vbat = vbat
-    wgt.values.vcel = vcel
-    wgt.values.cell_percent = batPercent
-    wgt.values.volt = (wgt.options.showTotalVoltage == 1) and vbat or vcel
-    wgt.values.cellColor = (vcel < 3.7) and RED or lcd.RGB(0x00963A) --GREEN
-end
-
 local function updateFlightMode(wgt)
     local fmno, fmname = getFlightMode()
 
@@ -200,26 +180,6 @@ local function updateProfiles(wgt)
         wgt.values.rate_id = "---"
     end
     wgt.values.rate_id_str = string.format("%s", wgt.values.rate_id)
-end
-
-local function updateCurr(wgt)
-    local curr_top = wgt.options.currTop
-    local curr = getValue("Curr")
-    local curr_max = getValue("Curr+")
-	curr_max = math.max(curr_max, curr)
-
-    if inSimu then
-        curr = 205
-        curr_max = 255
-    end
-	
-    wgt.values.curr = curr
-    wgt.values.curr_max = curr_max
-    wgt.values.curr_percent = math.min(100, math.floor(100 * (curr / curr_top)))
-    wgt.values.curr_max_percent = math.min(100, math.floor(100 * (curr_max / curr_top)))
-    wgt.values.curr_str = string.format("%dA", wgt.values.curr)
-    --wgt.values.curr_max_str = string.format("+%dA", wgt.values.curr_max)
-    wgt.values.curr_max_str = string.format("%dA", wgt.values.curr_max)
 end
 
 function isArmed()
@@ -273,23 +233,6 @@ local function updateELRS(wgt)
     end
     wgt.values.rqly_str = string.format("%d%%", wgt.values.rqly)
     wgt.values.rqly_min_str = string.format("%d%%", wgt.values.rqly_min)
-end
-
-local function updateTemperature(wgt)
-    local tempTop = wgt.options.tempTop
-
-    wgt.values.EscT = getValue("EscT")
-    wgt.values.EscT_max = getValue("EscT+")
-
-    if inSimu then
-        wgt.values.EscT = 60
-        wgt.values.EscT_max = 75
-    end
-    wgt.values.EscT_str = string.format("%d°c", wgt.values.EscT)
-    wgt.values.EscT_max_str = string.format("+%d°c", wgt.values.EscT_max)
-
-    wgt.values.EscT_percent = math.min(100, math.floor(100 * (wgt.values.EscT / tempTop)))
-    wgt.values.EscT_max_percent = math.min(100, math.floor(100 * (wgt.values.EscT_max / tempTop)))
 end
 
 -- RX battery voltage
@@ -460,7 +403,6 @@ local function refreshUI(wgt)
     updateTimeCount(wgt)
     updateRpm(wgt)
     updateCell(wgt)
-    updateCurr(wgt)
 	updateGovState(wgt)
     updateProfiles(wgt)
 	updateFlightMode(wgt)
@@ -469,8 +411,6 @@ local function refreshUI(wgt)
     updateThr(wgt)
 	updateVbec(wgt)
 
-    updateTemperature(wgt)
-	
 	refreshUINoConn(wgt)
 end
 

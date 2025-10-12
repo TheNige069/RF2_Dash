@@ -144,16 +144,6 @@ local function updateRpm(wgt)
     wgt.values.rpm_str = string.format("%s",Hspd)
 end
 
-local function updateCell(wgt)
-    local vbat = getValue("Vbat")
-
-    if inSimu then
-        vbat = 22.2
-    end
-
-    wgt.values.vbat = vbat
-end
-
 local function updateFlightMode(wgt)
     local fmno, fmname = getFlightMode()
 
@@ -252,23 +242,6 @@ local function updateELRS(wgt)
     end
     wgt.values.rqly_str = string.format("%d%%", wgt.values.rqly)
     wgt.values.rqly_min_str = string.format("%d%%", wgt.values.rqly_min)
-end
-
-local function updateTemperature(wgt)
-    local tempTop = wgt.options.tempTop
-
-    wgt.values.EscT = getValue("EscT")
-    wgt.values.EscT_max = getValue("EscT+")
-
-    if inSimu then
-        wgt.values.EscT = 60
-        wgt.values.EscT_max = 75
-    end
-    wgt.values.EscT_str = string.format("%d°c", wgt.values.EscT)
-    wgt.values.EscT_max_str = string.format("+%d°c", wgt.values.EscT_max)
-
-    wgt.values.EscT_percent = math.min(100, math.floor(100 * (wgt.values.EscT / tempTop)))
-    wgt.values.EscT_max_percent = math.min(100, math.floor(100 * (wgt.values.EscT_max / tempTop)))
 end
 
 -- RX battery or BEC voltage

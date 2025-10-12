@@ -344,4 +344,51 @@ function display_NoConnection(wgt, lx, ly)
     bNoConn:image({x = 30, y = 0, w = 90, h = 90, file = script_dir.."img/no_connection_wr.png"})
 end
 
+function updateCurr(wgt)
+    local curr_top = wgt.options.currTop
+    local curr = getValue("Curr")
+    local curr_max = getValue("Curr+")
+	curr_max = math.max(curr_max, curr)
+
+    if inSimu then
+        curr = 205
+        curr_max = 255
+    end
+	
+    wgt.values.curr = curr
+    wgt.values.curr_max = curr_max
+    wgt.values.curr_percent = math.min(100, math.floor(100 * (curr / curr_top)))
+    wgt.values.curr_max_percent = math.min(100, math.floor(100 * (curr_max / curr_top)))
+    wgt.values.curr_str = string.format("%dA", wgt.values.curr)
+    --wgt.values.curr_max_str = string.format("+%dA", wgt.values.curr_max)
+    wgt.values.curr_max_str = string.format("%dA", wgt.values.curr_max)
+end
+
+function updateTemperature(wgt)
+    local tempTop = wgt.options.tempTop
+
+    wgt.values.EscT = getValue("EscT")
+    wgt.values.EscT_max = getValue("EscT+")
+
+    if inSimu then
+        wgt.values.EscT = 60
+        wgt.values.EscT_max = 75
+    end
+    wgt.values.EscT_str = string.format("%d°c", wgt.values.EscT)
+    wgt.values.EscT_max_str = string.format("+%d°c", wgt.values.EscT_max)
+
+    wgt.values.EscT_percent = math.min(100, math.floor(100 * (wgt.values.EscT / tempTop)))
+    wgt.values.EscT_max_percent = math.min(100, math.floor(100 * (wgt.values.EscT_max / tempTop)))
+end
+
+function updateCell(wgt)
+    local vbat = getValue("Vbat")
+
+    if inSimu then
+        vbat = 22.2
+    end
+
+    wgt.values.vbat = vbat
+end
+
 return rf2DashFuncs
