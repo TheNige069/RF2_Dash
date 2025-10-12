@@ -18,7 +18,7 @@ How to use:
 
 Electric Dashboard
 
-<img width="487" height="276" alt="image" src="https://github.com/user-attachments/assets/9431cf2d-ef1e-4f22-819f-b106bd0cc28a" />
+<img width="487" height="285" alt="image" src="https://github.com/user-attachments/assets/9f4424c3-80f6-45f0-85fa-87a2d4f139f5" />
 
 Options:
 
