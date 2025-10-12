@@ -88,6 +88,14 @@ local function build_ui_electric(wgt)
         }
     }})
 	
+    -- ESC Temp
+    lvgl.build({{type = "box", x = 140, y = 140,
+        children = {
+            {type = "label", text = "ESC Temp", x = 0, y = 0, font = FS.FONT_6, color = LIGHTGREY},
+            {type = "label", text = function() return wgt.values.EscT_str end, x = 0, y = 10, font = FS.FONT_16, color = wgt.options.textColor},
+        }
+    }})
+	
 	display_BatteryVoltage(wgt, pMain, 200, 140)
 		
 	display_GovernorState(wgt, pMain, 325, 140)
@@ -401,9 +409,6 @@ local function resetWidgetValues(wgt)
 		vTXVoltsColor = RED,
 		vTXVoltsPercent_txt = "---%%",
 		
-		--click_x = 0,
-		--click_y = 0,
-		--textTouch = "---",
 		timeCurrent = "TheNige: --:--",
 		
 		govState = 0, 
@@ -445,15 +450,6 @@ local function update(wgt, options)
     wgt.not_connected_error = "Not connected"
 
     resetWidgetValues(wgt)
-
---    if wgt.options.rxbatNumCells == nil or wgt.options.rxbatNumCells == nan or wgt.options.rxbatNumCells < 0 then
---		wgt.options.rxbatNumCells = 2
---	end
-	
---	if wgt.options.rxbatNumCells > 0 then
---		wgt.values.vBecMax = wgt.options.rxbatNumCells * 4.2
---		wgt.values.vBecMin = wgt.options.rxbatNumCells * 3.5
---	end
 	
     build_ui_electric(wgt)
 	
