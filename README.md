@@ -33,3 +33,26 @@ Nitro Dashboard
 Options:
 
 <img width="406" height="226" alt="image" src="https://github.com/user-attachments/assets/cb0024a6-d471-4706-a236-48df2ace3efd" />
+
+The following Telemetry options need to be enabled for the Dashboards to work properly:
+- Battery
+  - Battery Voltage
+  - Battery Current
+  - Battery Consumption
+- Voltage
+  - BEC Voltage
+- Temperature
+  - ESC Temperature
+- RPM
+  - Headspeed
+  - Tailspeed
+- Status
+  - Model Id
+  - Flight Model
+  - Arming Flags
+  - Arming Disable Flags
+  - Governor State
+- Profile
+  - PID Profile
+  - Rates Profile
+
