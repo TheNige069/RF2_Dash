@@ -89,10 +89,10 @@ local function build_ui_electric(wgt)
     }})
 	
     -- ESC Temp
-    lvgl.build({{type = "box", x = 140, y = 140,
+    lvgl.build({{type = "box", x = 110, y = 140,
         children = {
             {type = "label", text = "ESC Temp", x = 0, y = 0, font = FS.FONT_6, color = LIGHTGREY},
-            {type = "label", text = function() return wgt.values.EscT_str end, x = 0, y = 10, font = FS.FONT_16, color = wgt.options.textColor},
+            {type = "label", text = function() return wgt.values.EscT_str end, x = 0, y = 15, font = FS.FONT_12, color = wgt.options.textColor},
         }
     }})
 	
@@ -232,16 +232,6 @@ local function updateArm(wgt)
     end
 end
 
-local function updateThr(wgt)
-    wgt.values.thr = getValue("Thr")
-    wgt.values.thr_max = getValue("Thr+")
-
-    if inSimu then
-        wgt.values.thr = 82
-        wgt.values.thr_max = 96
-    end
-end
-
 local function updateELRS(wgt)
     wgt.values.rqly = getValue("RQly")
     local rqly_min = getValue("RQly-")
@@ -287,35 +277,6 @@ local function updateVbec(wgt)
     end
 
     wgt.values.vBecPercent_txt = string.format("%d%%", wgt.values.vBecPercent)
-end
-
--- Transmitter battery voltage
-local function updateTXBatVoltage(wgt)
-	--wgt.values.vTXVolts = getValue(267)	-- This is the "Batt" sensor
-	wgt.values.vTXVolts = getValue(wgt.options.TXBatterySensor)
-
-	wgt.values.vTXVoltsMax = getGeneralSettings().battMax
-	wgt.values.vTXVoltsMin = getGeneralSettings().battMin 
-	wgt.values.vTXVoltsWarn = getGeneralSettings().battWarn 
-
-	local warnPercent = math.ceil(100 - (100 * (wgt.values.vTXVoltsMax - wgt.values.vTXVoltsWarn) // (wgt.values.vTXVoltsMax - wgt.values.vTXVoltsMin)))
-
-    wgt.values.vTXVoltsPercent = math.floor(100 - (100 * (wgt.values.vTXVoltsMax - wgt.values.vTXVolts) // (wgt.values.vTXVoltsMax - wgt.values.vTXVoltsMin)))
-	
-	if wgt.values.vTXVoltsPercent > 100 then wgt.values.vTXVoltsPercent = 100 end
-	
-    local p = wgt.values.vTXVoltsPercent
-    if (p < warnPercent) then
-        wgt.values.vTXVoltsColor = RED
-    elseif (p < 40) then
-        wgt.values.vTXVoltsColor = ORANGE
-    elseif (p < 60) then
-        wgt.values.vTXVoltsColor = lcd.RGB(0x00963A) --GREEN
-    else
-        wgt.values.vTXVoltsColor = GREEN
-    end
-
-    wgt.values.vTXVoltsPercent_txt = string.format("%d%%", wgt.values.vTXVoltsPercent)
 end
 
 local function updateImage(wgt)
@@ -388,9 +349,6 @@ local function resetWidgetValues(wgt)
         rqly_str = 0,
         rqly_min_str = 0,
 
-        thr = 0,
-        thr_max = 0,
-
 		fmode = 0,
 		fmode_str = "----",
 		
@@ -434,7 +392,6 @@ local function refreshUI(wgt)
 	updateFlightMode(wgt)
 	updateELRS(wgt)
     updateArm(wgt)
-    updateThr(wgt)
 	updateVbec(wgt)
 
     updateTemperature(wgt)

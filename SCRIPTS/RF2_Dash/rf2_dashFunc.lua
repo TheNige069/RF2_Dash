@@ -334,7 +334,7 @@ end
 function display_BatteryVoltage(wgt, theBox, lx, ly)
     local bRXVolts = theBox:box({x = lx, y = ly})
     bRXVolts:label({text = "Batt Voltage", x = 0, y = 0, font = FS.FONT_6, color = wgt.options.textColorTitle})
-    bRXVolts:label({text = function() return string.format("%.02fv", wgt.values.vbat) end , x = 0, y = 12, font = FS.FONT_12, color = GREEN})
+    bRXVolts:label({text = function() return string.format("%.02fv", wgt.values.vbat) end , x = 0, y = 15, font = FS.FONT_12, color = GREEN})
 end
 
 function display_NoConnection(wgt, lx, ly)
@@ -360,12 +360,12 @@ function updateCurr(wgt)
     wgt.values.curr_percent = math.min(100, math.floor(100 * (curr / curr_top)))
     wgt.values.curr_max_percent = math.min(100, math.floor(100 * (curr_max / curr_top)))
     wgt.values.curr_str = string.format("%dA", wgt.values.curr)
-    --wgt.values.curr_max_str = string.format("+%dA", wgt.values.curr_max)
     wgt.values.curr_max_str = string.format("%dA", wgt.values.curr_max)
 end
 
 function updateTemperature(wgt)
     local tempTop = wgt.options.tempTop
+	local CorF = "c"
 
     wgt.values.EscT = getValue("EscT")
     wgt.values.EscT_max = getValue("EscT+")
@@ -374,8 +374,15 @@ function updateTemperature(wgt)
         wgt.values.EscT = 60
         wgt.values.EscT_max = 75
     end
-    wgt.values.EscT_str = string.format("%d°c", wgt.values.EscT)
-    wgt.values.EscT_max_str = string.format("+%d°c", wgt.values.EscT_max)
+
+	if getGeneralSettings().imperial > 0 then 
+		CorF = "f" 
+		wgt.values.EscT = (wgt.values.EscT * 1.8) + 32.0
+		wgt.values.EscT_max = (wgt.values.EscT_max * 1.8) + 32.0
+	end
+	
+    wgt.values.EscT_str = string.format("%d°%s", wgt.values.EscT, CorF)
+    wgt.values.EscT_max_str = string.format("+%d°%s", wgt.values.EscT_max, CorF)
 
     wgt.values.EscT_percent = math.min(100, math.floor(100 * (wgt.values.EscT / tempTop)))
     wgt.values.EscT_max_percent = math.min(100, math.floor(100 * (wgt.values.EscT_max / tempTop)))
@@ -390,5 +397,35 @@ function updateCell(wgt)
 
     wgt.values.vbat = vbat
 end
+
+-- Transmitter battery voltage
+function updateTXBatVoltage(wgt)
+	--wgt.values.vTXVolts = getValue(267)	-- This is the "Batt" sensor
+	wgt.values.vTXVolts = getValue("tx-voltage")
+
+	wgt.values.vTXVoltsMax = getGeneralSettings().battMax
+	wgt.values.vTXVoltsMin = getGeneralSettings().battMin 
+	wgt.values.vTXVoltsWarn = getGeneralSettings().battWarn 
+
+	local warnPercent = math.ceil(100 - (100 * (wgt.values.vTXVoltsMax - wgt.values.vTXVoltsWarn) // (wgt.values.vTXVoltsMax - wgt.values.vTXVoltsMin)))
+
+    wgt.values.vTXVoltsPercent = math.floor(100 - (100 * (wgt.values.vTXVoltsMax - wgt.values.vTXVolts) // (wgt.values.vTXVoltsMax - wgt.values.vTXVoltsMin)))
+	
+	if wgt.values.vTXVoltsPercent > 100 then wgt.values.vTXVoltsPercent = 100 end
+	
+    local p = wgt.values.vTXVoltsPercent
+    if (p < warnPercent) then
+        wgt.values.vTXVoltsColor = RED
+    elseif (p < 40) then
+        wgt.values.vTXVoltsColor = ORANGE
+    elseif (p < 60) then
+        wgt.values.vTXVoltsColor = lcd.RGB(0x00963A) --GREEN
+    else
+        wgt.values.vTXVoltsColor = GREEN
+    end
+
+    wgt.values.vTXVoltsPercent_txt = string.format("%d%%", wgt.values.vTXVoltsPercent)
+end
+
 
 return rf2DashFuncs

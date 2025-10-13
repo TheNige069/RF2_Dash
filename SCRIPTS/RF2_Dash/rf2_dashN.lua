@@ -93,7 +93,7 @@ local function build_ui_nitro(wgt)
 	build_FailToArmFlags(wgt, pMain, 100, 25)
 	build_statusbar(wgt, 0, wgt.zone.h - 20, 0)
 
-	display_RXVoltage(wgt, pMain, 5, 55, false)
+	display_RXVoltage(wgt, pMain, 0, 205, false)
 
     -- Flight mode
 	display_FlightMode(pMain, 150, 195)
@@ -270,35 +270,6 @@ local function updateVbec(wgt)
     end
 
     wgt.values.vBecPercent_txt = string.format("%d%%", wgt.values.vBecPercent)
-end
-
--- Transmitter battery voltage
-local function updateTXBatVoltage(wgt)
-	--wgt.values.vTXVolts = getValue(267)	-- This is the "Batt" sensor
-	wgt.values.vTXVolts = getValue(wgt.options.TXBatterySensor)
-
-	wgt.values.vTXVoltsMax = getGeneralSettings().battMax
-	wgt.values.vTXVoltsMin = getGeneralSettings().battMin 
-	wgt.values.vTXVoltsWarn = getGeneralSettings().battWarn 
-
-	local warnPercent = math.ceil(100 - (100 * (wgt.values.vTXVoltsMax - wgt.values.vTXVoltsWarn) // (wgt.values.vTXVoltsMax - wgt.values.vTXVoltsMin)))
-
-    wgt.values.vTXVoltsPercent = math.floor(100 - (100 * (wgt.values.vTXVoltsMax - wgt.values.vTXVolts) // (wgt.values.vTXVoltsMax - wgt.values.vTXVoltsMin)))
-	
-	if wgt.values.vTXVoltsPercent > 100 then wgt.values.vTXVoltsPercent = 100 end
-	
-    local p = wgt.values.vTXVoltsPercent
-    if (p < warnPercent) then
-        wgt.values.vTXVoltsColor = RED
-    elseif (p < 40) then
-        wgt.values.vTXVoltsColor = ORANGE
-    elseif (p < 60) then
-        wgt.values.vTXVoltsColor = lcd.RGB(0x00963A) --GREEN
-    else
-        wgt.values.vTXVoltsColor = GREEN
-    end
-
-    wgt.values.vTXVoltsPercent_txt = string.format("%d%%", wgt.values.vTXVoltsPercent)
 end
 
 local function updateImage(wgt)

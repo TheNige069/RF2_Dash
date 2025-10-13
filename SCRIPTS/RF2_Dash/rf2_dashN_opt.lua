@@ -5,7 +5,6 @@ local M = {
         {"textColorTitle"	, COLOR	, lcd.RGB(0xC0C4C0) }, --LIGHTGREY
         {"textColor"		, COLOR	, WHITE },
         {"FlightTimer"		, CHOICE, 1 , {"1-Timer 1", "2-Timer 2", "3-Timer 3"} },
-		{"TXBatterySensor"	, SOURCE, 267},
     },
 
     translate = function(name)
@@ -14,7 +13,6 @@ local M = {
             textColor = "Text color",
 			textColorTitle = "Title text color",
 			FlightTimer = "What timer to display", 
-			TXBatterySensor = "Radio Transmitter battery",
         }
         return translations[name]
     end
