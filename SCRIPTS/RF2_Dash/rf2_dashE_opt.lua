@@ -6,7 +6,7 @@ local M = {
         {"FlightTimer"		    , CHOICE, 1 , {"1-Timer 1", "2-Timer 2", "3-Timer 3"} },
         {"tempTop"      	    , VALUE ,  90, 30, 150 },
         {"currTop"              , VALUE , 250, 40, 300 },
-        {"BattCapa"             , VALUE , 5000, 0, 5000 },
+        {"BattCapa"             , VALUE , 5000, 0, 10000 },
         {"BattCapMin"           , VALUE , 30, 0, 100 },
 		{"BatteryCallout"	    , VALUE , 10, 10, 50},
 		{"FlightBattery"	    , SOURCE, 267},
