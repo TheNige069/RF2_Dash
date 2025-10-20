@@ -13,26 +13,26 @@ How to use:
 - Enable the background task
 - Download this widget and extract into the SCRIPTS and WIDGETS folders
 - Add a new screen. Configure the screen as fullscreen and turn off Topbar, Flight Mode, Sliders and trims
-- Add the RF2_dashN (Notri) or RF2_dashE (Electric) widgets to the screen
+- Add the RF2_dashN (Nitro) or RF2_dashE (Electric) widgets to the screen
 
 
 Electric Dashboard
 
-<img width="487" height="285" alt="image" src="https://github.com/user-attachments/assets/9f4424c3-80f6-45f0-85fa-87a2d4f139f5" />
+<img width="486" height="285" alt="image" src="https://github.com/user-attachments/assets/f4f0c94c-2aae-4c4a-864f-ace546d7822f" />
 
 Options:
 
-<img width="397" height="222" alt="image" src="https://github.com/user-attachments/assets/5026d6b6-521a-45ed-8af9-6f9a16c6900d" />
-<img width="408" height="232" alt="image" src="https://github.com/user-attachments/assets/fbd657c7-1fc1-460c-9629-328fba79632c" />
+<img width="487" height="282" alt="image" src="https://github.com/user-attachments/assets/744d1026-85c5-44d1-a6c1-a27326363f29" />
+<img width="486" height="283" alt="image" src="https://github.com/user-attachments/assets/a64b5740-351c-4fda-9c5c-a3d136a57c2f" />
 
 
 Nitro Dashboard
 
-<img width="482" height="281" alt="image" src="https://github.com/user-attachments/assets/01d20acb-cae9-497a-906d-10b60b625c2f" />
+<img width="486" height="287" alt="image" src="https://github.com/user-attachments/assets/6d32897d-7cf8-4d52-9bf1-e029c19ff685" />
 
 Options:
 
-<img width="406" height="226" alt="image" src="https://github.com/user-attachments/assets/cb0024a6-d471-4706-a236-48df2ace3efd" />
+<img width="487" height="277" alt="image" src="https://github.com/user-attachments/assets/15ab3139-d554-4f9a-adea-e4a8b53a64d4" />
 
 The following Telemetry options need to be enabled for the Dashboards to work properly:
 - Battery
@@ -40,6 +40,7 @@ The following Telemetry options need to be enabled for the Dashboards to work pr
   - Battery Current
   - Battery Consumption
 - Voltage
+  - ESC Voltage
   - BEC Voltage
 - Temperature
   - ESC Temperature
@@ -55,4 +56,9 @@ The following Telemetry options need to be enabled for the Dashboards to work pr
 - Profile
   - PID Profile
   - Rates Profile
+- Control
+  - Control (hi-res)
+  - Throttle Control
+- System
+  - Heartbeat
 
