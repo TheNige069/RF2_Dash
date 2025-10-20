@@ -16,8 +16,6 @@ local img_box = nil
 local err_img = bitmap.open(script_dir.."img/no_connection_wr.png")
 
 local function build_ui_electric(wgt)
-    local txtColor = wgt.options.textColor
-    local titleGreyColor = LIGHTGREY
     local dx = 20
 
     lvgl.clear()
@@ -33,114 +31,21 @@ local function build_ui_electric(wgt)
     -- Craft name
     local bCraftName = pMain:box({x = 325, y = 80})
     bCraftName:rectangle({x = 10, y = 20, w = rf2DashFuncs.isizew - 20, h = 20, filled = true, rounded = 8, color = DARKGREY, opacity = 200})
-    bCraftName:label({text = function() return wgt.values.craft_name end,  x = 15, y = 20, font = FS.FONT_8, color = wgt.options.textColor})
+    bCraftName:label({text = function() return wgt.values.craft_name end,  x = 15, y = 20, font = FS.FONT_8, color = rf2DashFuncs.TextColourItem})
 
     display_NoConnection(wgt, 325, 10)
-
-	local boxSize = ({x = 0, y = 0, h = 180, w = 180})
-    local g_thick = 20
-    local gm_thick = 10
-    local g_angle_min = 140
-    local g_angle_max = 400
-	local centre_x = (boxSize.w / 2) - g_thick --+ boxSize.x
-	local centre_y = (boxSize.h / 2) - gm_thick --+ boxSize.y
-    local g_rad = math.min((boxSize.w / 2), (boxSize.h / 2)) - g_thick - 2
-    local gm_rad =  g_rad - g_thick --+ (g_thick / 2)
-	
-    --local bCurr = pMain:box({x = boxSize.x, y = boxSize.y})
-    local bCurr = lvgl.box({x = boxSize.x, y = boxSize.y})
-
-    bCurr:label({text = "Current",  x = 0, y = 0, font = FS.FONT_6, color = LIGHTGREY})
-    -- Current value
-	bCurr:label({x = centre_x - g_thick, y = (boxSize.h / 2) - g_thick, text = function() return wgt.values.curr_str end, font = FS.FONT_8, color = wgt.options.textColor})
-    -- Max current value
-	bCurr:label({x = centre_x - g_thick, y = centre_y + 30, text = function() return wgt.values.curr_max_str end, font = FS.FONT_8, color = wgt.options.textColor})
-    bCurr:arc({x = centre_x, y = centre_y, radius = g_rad, thickness = g_thick, startAngle = g_angle_min, endAngle = g_angle_max, rounded = true, color = lcd.RGB(0x222222)})
-    bCurr:arc({x = centre_x, y = centre_y, radius = gm_rad, thickness = gm_thick, startAngle = g_angle_min, endAngle = function() return calEndAngle(wgt.values.curr_max_percent, g_angle_min, g_angle_max) end, color = lcd.RGB(0xFF623F), opacity = 180})
-    bCurr:arc({x = centre_x, y = centre_y, radius = g_rad, thickness = g_thick, startAngle = g_angle_min, endAngle = function() return calEndAngle(wgt.values.curr_percent, g_angle_min, g_angle_max) end, color = lcd.RGB(0xFF623F)})
-	
-	boxSize = ({x = 170, y = 0, h = 180, w = 180})
-	centre_x = (boxSize.w / 2) - g_thick --+ boxSize.x
-	centre_y = (boxSize.h / 2) - gm_thick --+ boxSize.y
-
-    g_rad = math.min((boxSize.w / 2), (boxSize.h / 2)) - g_thick - 2
-    gm_rad =  g_rad - g_thick --+ (g_thick / 2)
-	
-    --local bCapa = pMain:box({x = boxSize.x, y = boxSize.y})
-    local bCapa = lvgl.box({x = boxSize.x, y = boxSize.y})
-
-    bCapa:label({text = "MA Used",  x = 0, y = 0, font = FS.FONT_6, color = LIGHTGREY})
-    -- Capacity percentage left
-	bCapa:label({x = centre_x - g_thick, y = (boxSize.h / 2) - (2 * g_thick), text = function() return wgt.values.capa_percent.."%" end, font = FS.FONT_8, color = wgt.options.textColor})
-    -- Capacity used 
-	bCapa:label({x = centre_x - g_thick-10, y = (boxSize.h / 2) - g_thick, text = function() return wgt.values.capa_str end, font = FS.FONT_8, color = wgt.options.textColor})
-    -- Max Capacity
-	bCapa:label({x = centre_x - g_thick-7, y = centre_y + 30, text = function() return wgt.values.capa_max_str end, font = FS.FONT_8, color = wgt.options.textColor})
-    bCapa:arc({x = centre_x, y = centre_y, radius = g_rad, thickness = g_thick, startAngle = g_angle_min, endAngle = g_angle_max, rounded = true, color = lcd.RGB(0x222222)})
-    bCapa:arc({x = centre_x, y = centre_y, radius = gm_rad, thickness = gm_thick, startAngle = g_angle_min, endAngle = function() return calEndAngle(wgt.values.capa_max_percent, g_angle_min, g_angle_max) end, color = lcd.RGB(0x62FF3F), opacity = 180})
-    bCapa:arc({x = centre_x, y = centre_y, radius = g_rad, thickness = g_thick, startAngle = g_angle_min, endAngle = function() return calEndAngle(wgt.values.capa_percent, g_angle_min, g_angle_max) end, color = lcd.RGB(0x62FF3F)})
-
-    -- rpm
-    lvgl.build({{type = "box", x = 10, y = 140,
-        children = {
-            {type = "label", text = "RPM", x = 0, y = 0, font = FS.FONT_6, color = LIGHTGREY},
-            {type = "label", text = function() return wgt.values.rpm_str end, x = 0, y = 10, font = FS.FONT_16, color = wgt.options.textColor},
-        }
-    }})
-	
-    -- ESC Temp
-    lvgl.build({{type = "box", x = 110, y = 140,
-        children = {
-            {type = "label", text = "ESC Temp", x = 0, y = 0, font = FS.FONT_6, color = LIGHTGREY},
-            {type = "label", text = function() return wgt.values.EscT_str end, x = 0, y = 15, font = FS.FONT_12, color = wgt.options.textColor},
-        }
-    }})
-	
-	display_BatteryVoltage(wgt, pMain, 200, 140)
-		
+	display_AmpsGauge(wgt, pMain, {x = 0, y = 0, h = 180, w = 180}, lcd.RGB(0xFF623F))
+	display_MAHUsedGauge(wgt, pMain, {x = 170, y = 0, h = 180, w = 180}, lcd.RGB(0x62FF3F))
+	displayRPM(wgt, pMain, 1, 140, FS.FONT_16)
+	displayESCTemperature(wgt, pMain, 110, 140)
+	display_BatteryVoltage(wgt, pMain, 200, 140)	
 	display_GovernorState(wgt, pMain, 325, 140)
-
 	display_ArmState(wgt, pMain, 160, 200)
-	
 	display_RXVoltage(wgt, pMain, 0, 205, false)
-	
 	displayRatePIDprofile(wgt, pMain, 90, 205)
-	display_timer(wgt, pMain, 310, 190)
-
+	display_timer(wgt, pMain, 290, 190)
 	build_statusbar(wgt, 0, wgt.zone.h - 20, 0)
 	build_FailToArmFlags(wgt, pMain, 100, 25)
-
-end
-
--- To display the current time on the dashboard
--- This is the local time as set in the transmitter, not the time from any of the timers
-local function updateCurrentTime(wgt)
-	local theDateTime = getDateTime()
-	
-	wgt.values.timeCurrent = string.format("%02d:%02d TheNige069", theDateTime.hour, theDateTime.min)
-	
-end
-
-local function updateCraftName(wgt)
-	wgt.values.craft_name = string.gsub(model.getInfo().name, "^>", "")	
-end
-
-local function updateTimeCount(wgt)
-	if wgt.options.FlightTimer < 0 then 
-		wgt.options.FlightTimer = 1
-	end
-	
-	local timerNumber = wgt.options.FlightTimer - 1
-
-	if timerNumber < 0 then 
-		return
-	end
-	
-    local t1 = model.getTimer(timerNumber)
-    local time_str, isNegative = formatTime(t1, wgt.options.use_days)
-	
-    wgt.values.timer_str = time_str
-    wgt.values.timerIsNeg = isNegative
 end
 
 local function updateRpm(wgt)
@@ -178,26 +83,6 @@ local function updateProfiles(wgt)
         wgt.values.rate_id = "---"
     end
     wgt.values.rate_id_str = string.format("%s", wgt.values.rate_id)
-end
-
-local function updateCurr(wgt)
-    local curr_top = wgt.options.currTop
-    local curr = getValue("Curr")
-    local curr_max = getValue("Curr+")
-	curr_max = math.max(curr_max, curr)
-
-    if inSimu then
-        curr = 205
-        curr_max = 255
-    end
-	
-    wgt.values.curr = curr
-    wgt.values.curr_max = curr_max
-    wgt.values.curr_percent = math.min(100, math.floor(100 * (curr / curr_top)))
-    wgt.values.curr_max_percent = math.min(100, math.floor(100 * (curr_max / curr_top)))
-    wgt.values.curr_str = string.format("%dA", wgt.values.curr)
-    --wgt.values.curr_max_str = string.format("+%dA", wgt.values.curr_max)
-    wgt.values.curr_max_str = string.format("%dA", wgt.values.curr_max)
 end
 
 function isArmed()

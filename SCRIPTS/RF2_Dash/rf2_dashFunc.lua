@@ -6,9 +6,10 @@ inSimu = string.sub(select(2,getVersion()), -4) == "simu"
 
 rf2DashFuncs.isizew = 150
 rf2DashFuncs.isizeh = 120
+rf2DashFuncs.TextColourTitle = COLOR_THEME_PRIMARY2
+rf2DashFuncs.TextColourItem = COLOR_THEME_SECONDARY2
 
 function formatTime(t1, useDays)
-    --log("rf2_dash: formatTime")
     local dd_raw = t1.value
     local isNegative = false
     if dd_raw < 0 then
@@ -46,6 +47,36 @@ function formatTime(t1, useDays)
       time_str = '-' .. time_str
     end
     return time_str, isNegative
+end
+
+-- To display the current time on the dashboard
+-- This is the local time as set in the transmitter, not the time from any of the timers
+function updateCurrentTime(wgt)
+	local theDateTime = getDateTime()
+	
+	wgt.values.timeCurrent = string.format("%02d:%02d TheNige069", theDateTime.hour, theDateTime.min)
+end
+
+function updateCraftName(wgt)
+	wgt.values.craft_name = string.gsub(model.getInfo().name, "^>", "")	
+end
+
+function updateTimeCount(wgt)
+	if wgt.options.FlightTimer < 0 then 
+		wgt.options.FlightTimer = 1
+	end
+	
+	local timerNumber = wgt.options.FlightTimer - 1
+
+	if timerNumber < 0 then 
+		return
+	end
+	
+    local t1 = model.getTimer(timerNumber)
+    local time_str, isNegative = formatTime(t1, wgt.options.use_days)
+	
+    wgt.values.timer_str = time_str
+    wgt.values.timerIsNeg = isNegative
 end
 
 function armingDisableFlagsList(flags)
@@ -97,18 +128,18 @@ function buildBarGuage(parentBox, wgt, myValues, fPercent, getPercentColor)
     local percent = fPercent(wgt)
     local r = 30
     local fill_color = myValues.bar_color or GREEN
-    local fill_color= (getPercentColor~=nil) and getPercentColor(wgt, percent) or GREEN
+    local fill_color = (getPercentColor~=nil) and getPercentColor(wgt, percent) or GREEN
     local tw = 4
     local th = 4
 
     local box = parentBox:box({x=myValues.x, y=myValues.y})
-    box:rectangle({x=0, y=0, w=myValues.w, h=myValues.h, color=myValues.bg_color, filled=true, rounded=6, thickness=8})
-    box:rectangle({x=0, y=0, w=myValues.w, h=myValues.h, color=WHITE, filled=false, thickness=myValues.fence_thickness or 3, rounded=8})
-    box:rectangle({x=5, y=5,
+    box:rectangle({x = 0, y = 0, w = myValues.w, h = myValues.h, color = myValues.bg_color, filled = true, rounded = 6, thickness = 8})
+    box:rectangle({x = 0, y = 0, w = myValues.w, h = myValues.h, color = WHITE, filled = false, thickness = myValues.fence_thickness or 3, rounded = 8})
+    box:rectangle({x = 5, y = 5,
         -- w=0, h=myValues.h,
         filled=true, rounded=4,
-        size =function() return math.floor(fPercent(wgt) / 100 * myValues.w)-10, myValues.h-10 end,
-        color=function() return getPercentColor(wgt, percent) or GREEN end,
+        size = function() return math.floor(fPercent(wgt) / 100 * myValues.w) - 10, myValues.h - 10 end,
+        color = function() return getPercentColor(wgt, percent) or GREEN end,
     })
 
     return box
@@ -167,7 +198,7 @@ function isFileExist(file_name)
     return true
 end
 
-function display_CurrentGauge(wgt, theBox, boxSize)
+function display_AmpsGauge(wgt, theBox, boxSize, gaugeColour)
     local g_thick = 20
     local gm_thick = 10
     local g_angle_min = 140
@@ -179,42 +210,38 @@ function display_CurrentGauge(wgt, theBox, boxSize)
 
     local bCurr = theBox:box({x = boxSize.x, y = boxSize.y})
 
-    bCurr:label({text = "Current",  x = 0, y = 0, font = FS.FONT_6, color = LIGHTGREY})
+    bCurr:label({text = "Amps",  x = 0, y = 0, font = FS.FONT_6, color = rf2DashFuncs.TextColourTitle})
     -- Current value
-    bCurr:label({x = centre_x - g_thick, y = (boxSize.h / 2) - g_thick, text = function() return wgt.values.curr_str end, font = FS.FONT_8, color = wgt.options.textColor})
+    bCurr:label({x = centre_x - g_thick, y = (boxSize.h / 2) - g_thick, text = function() return wgt.values.curr_str end, font = FS.FONT_8, color = rf2DashFuncs.TextColourItem})
     -- Max current value
-    bCurr:label({x = centre_x - g_thick, y = centre_y + 20, text = function() return wgt.values.curr_max_str end, font = FS.FONT_8, color = wgt.options.textColor})
+    bCurr:label({x = centre_x - g_thick, y = centre_y + 20, text = function() return wgt.values.curr_max_str end, font = FS.FONT_8, color = rf2DashFuncs.TextColourItem})
     bCurr:arc({x = centre_x, y = centre_y, radius = g_rad, thickness = g_thick, startAngle = g_angle_min, endAngle = g_angle_max, rounded = true, color = lcd.RGB(0x222222)})
-    bCurr:arc({x = centre_x, y = centre_y, radius = gm_rad, thickness = gm_thick, startAngle = g_angle_min, endAngle = function() return rf2DashFuncs.calEndAngle(wgt.values.curr_max_percent, g_angle_min, g_angle_max) end, color = lcd.RGB(0xFF623F), opacity = 180})
-    bCurr:arc({x = centre_x, y = centre_y, radius = g_rad, thickness = g_thick, startAngle = g_angle_min, endAngle = function() return rf2DashFuncs.calEndAngle(wgt.values.curr_percent, g_angle_min, g_angle_max) end, color = lcd.RGB(0xFF623F)})
+    bCurr:arc({x = centre_x, y = centre_y, radius = gm_rad, thickness = gm_thick, startAngle = g_angle_min, endAngle = function() return calEndAngle(wgt.values.curr_max_percent, g_angle_min, g_angle_max) end, color = gaugeColour, opacity = 180})
+    bCurr:arc({x = centre_x, y = centre_y, radius = g_rad, thickness = g_thick, startAngle = g_angle_min, endAngle = function() return calEndAngle(wgt.values.curr_percent, g_angle_min, g_angle_max) end, color = gaugeColour})
 end
 
-function display_MAHUsedGauge(wgt, theBox, boxSize)
+function display_MAHUsedGauge(wgt, theBox, boxSize, gaugeColour)
     local g_thick = 20
     local gm_thick = 10
     local g_angle_min = 140
     local g_angle_max = 400
-
     local centre_x = (boxSize.w / 2) - g_thick --+ boxSize.x
     local centre_y = (boxSize.h / 2) - gm_thick --+ boxSize.y
-
     local g_rad = math.min((boxSize.w / 2), (boxSize.h / 2)) - g_thick - 2
     local gm_rad =  g_rad - g_thick --+ (g_thick / 2)
-    --local g_y = boxSize.y --+ 50
 	
-    local bCurr = theBox:box({x = boxSize.x, y = boxSize.y})
-    --local bCurr = lvgl.box({x = boxSize.x, y = boxSize.y})
+    local bCapa = theBox:box({x = boxSize.x, y = boxSize.y})
 
-    bCurr:label({text = "MA Used",  x = 0, y = 0, font = FS.FONT_6, color = LIGHTGREY})
-    -- Current value
-    bCurr:label({x = centre_x - g_thick, y = (boxSize.h / 2) - g_thick, text = function() return wgt.values.curr_str end, font = FS.FONT_8, color = wgt.options.textColor})
-    -- Max current value
-    bCurr:label({x = centre_x - g_thick, y = centre_y + 20, text = function() return wgt.values.curr_max_str end, font = FS.FONT_8, color = wgt.options.textColor})
-	
-    bCurr:arc({x = centre_x, y = centre_y, radius = g_rad, thickness = g_thick, startAngle = g_angle_min, endAngle = g_angle_max, rounded = true, color = lcd.RGB(0x222222)})
-    bCurr:arc({x = centre_x, y = centre_y, radius = gm_rad, thickness = gm_thick, startAngle = g_angle_min, endAngle = function() return rf2DashFuncs.calEndAngle(wgt.values.curr_max_percent, g_angle_min, g_angle_max) end, color = lcd.RGB(0x62FF3F), opacity = 180})
-    bCurr:arc({x = centre_x, y = centre_y, radius = g_rad, thickness = g_thick, startAngle = g_angle_min, endAngle = function() return rf2DashFuncs.calEndAngle(wgt.values.curr_percent, g_angle_min, g_angle_max) end, color = lcd.RGB(0x62FF3F)})
-
+    bCapa:label({text = "MA Used",  x = 0, y = 0, font = FS.FONT_6, color = rf2DashFuncs.TextColourTitle})
+    -- Capacity percentage
+	bCapa:label({x = centre_x - g_thick, y = (boxSize.h / 2) - (2 * g_thick), text = function() return wgt.values.capa_percent.."%" end, font = FS.FONT_8, color = rf2DashFuncs.TextColourItem})
+    -- Capacity used 
+	bCapa:label({x = centre_x - g_thick-10, y = (boxSize.h / 2) - g_thick, text = function() return wgt.values.capa_str end, font = FS.FONT_8, color = rf2DashFuncs.TextColourItem})
+    -- Max Capacity
+	bCapa:label({x = centre_x - g_thick-12, y = centre_y + 30, text = function() return wgt.values.capa_max_str end, font = FS.FONT_8, color = rf2DashFuncs.TextColourItem})
+    bCapa:arc({x = centre_x, y = centre_y, radius = g_rad, thickness = g_thick, startAngle = g_angle_min, endAngle = g_angle_max, rounded = true, color = lcd.RGB(0x222222)})
+    bCapa:arc({x = centre_x, y = centre_y, radius = gm_rad, thickness = gm_thick, startAngle = g_angle_min, endAngle = function() return calEndAngle(wgt.values.capa_max_percent, g_angle_min, g_angle_max) end, color = gaugeColour, opacity = 180})
+    bCapa:arc({x = centre_x, y = centre_y, radius = g_rad, thickness = g_thick, startAngle = g_angle_min, endAngle = function() return calEndAngle(wgt.values.capa_percent, g_angle_min, g_angle_max) end, color = gaugeColour})
 end
 
 function displayRatePIDprofile(wgt, theBox, lx, ly)
@@ -232,8 +259,8 @@ function displayRatePIDprofile(wgt, theBox, lx, ly)
     theBox:build({{type = "box", x = lx, y = ly,
         children = {
             -- {type = "rectangle", x = 0, y = 0, w = 40, h = 50, color = YELLOW},
-            {type = "label", text = "Profile", x = 0, y = 0, font = FS.FONT_6, color = wgt.options.textColorTitle},
-            {type = "label", text = profileID , x = 5, y = 10, font = FS.FONT_16, color = wgt.options.textColor},
+            {type = "label", text = "Profile", x = 0, y = 0, font = FS.FONT_6, color = rf2DashFuncs.TextColourTitle},
+            {type = "label", text = profileID , x = 5, y = 10, font = FS.FONT_16, color = rf2DashFuncs.TextColourItem},
         }
     }})
 
@@ -241,16 +268,16 @@ function displayRatePIDprofile(wgt, theBox, lx, ly)
     theBox:build({{type = "box", x = lx + 46, y = ly,
         children = {
             -- {type = "rectangle", x = 0, y = 0, w = 40, h = 50, color = YELLOW},
-            {type = "label", text = "Rate", x = 0, y = 0, font = FS.FONT_6, color = wgt.options.textColorTitle},
-            {type = "label", text = rateID , x = 5, y = 10, font = FS.FONT_16, color = wgt.options.textColor},
+            {type = "label", text = "Rate", x = 0, y = 0, font = FS.FONT_6, color = rf2DashFuncs.TextColourTitle},
+            {type = "label", text = rateID , x = 5, y = 10, font = FS.FONT_16, color = rf2DashFuncs.TextColourItem},
         }
     }})
 end
 
 function display_GovernorState(wgt, theBox, lx, ly)
     local bGS = theBox:box({x = lx, y = ly})
-    bGS:label({text = "Governor State", x = 0, y = 0, font = FS.FONT_6, color = wgt.options.textColorTitle})
-    bGS:label({text = function() return wgt.values.govState_str end , x = 0, y = 20, font = FS.FONT_8 ,color = wgt.options.textColor})
+    bGS:label({text = "Governor State", x = 0, y = 0, font = FS.FONT_6, color = rf2DashFuncs.TextColourTitle})
+    bGS:label({text = function() return wgt.values.govState_str end , x = 0, y = 20, font = FS.FONT_8, color = rf2DashFuncs.TextColourItem})
 end
 
 function build_statusbar(wgt, lx, ly, txBatBar)
@@ -282,7 +309,7 @@ function display_timer(wgt, theBox, lx, ly)
     theBox:build({
         {type = "box", x = lx, y = ly, children = {
             {type = "label", text = function() return wgt.values.timer_str end, x = 0, y = 0, font = FS.FONT_38 ,
-				color = function() return wgt.values.timerIsNeg and RED or wgt.options.textColor end},
+				color = function() return wgt.values.timerIsNeg and RED or rf2DashFuncs.TextColourItem end},
         }}
     })
 end
@@ -301,7 +328,7 @@ end
 function display_RXVoltage(wgt, theBox, lx, ly, displayGauge)
     -- RX voltage
     local bRXVolts = theBox:box({x = lx, y = ly})
-    bRXVolts:label({text = "RX Battery", x = 0, y = 0, font = FS.FONT_6, color = wgt.options.textColorTitle})
+    bRXVolts:label({text = "RX Battery", x = 0, y = 0, font = FS.FONT_6, color = rf2DashFuncs.TextColourTitle})
     bRXVolts:label({text = function() return string.format("%.02fv", wgt.values.vBecUsed) end , x = 0, y = 12, font = FS.FONT_16, color=function() return wgt.values.vBecColor end})
     if (displayGauge == true) then
       buildBarGuage(bRXVolts, wgt,
@@ -310,6 +337,17 @@ function display_RXVoltage(wgt, theBox, lx, ly, displayGauge)
         function(wgt) return wgt.values.vBecColor end
       )
     end
+end
+
+function displayRPM(wgt, theBox, lx, ly, textSize)
+	
+    theBox:build({{type = "box", x = lx, y = ly,
+        children = {
+            {type = "label", text = "RPM", x = 0, y = 0, font = FS.FONT_6, color = rf2DashFuncs.TextColourTitle},
+            {type = "label", text = function() return wgt.values.rpm_str end, x = 0, y = 10, font = textSize, color = rf2DashFuncs.TextColourItem},
+        }
+    }})
+	
 end
 
 function updateMAUsed(wgt)
@@ -329,11 +367,19 @@ function updateMAUsed(wgt)
     wgt.values.capa_max_percent = math.min(100, math.floor(100 * (capa_max / capa_max)))
     wgt.values.capa_str = string.format("%0000dma", wgt.values.capa)
     wgt.values.capa_max_str = string.format("%0000dma", wgt.values.capa_max)
+
+    readoutBatteryPercentage(wgt)
+end
+
+function displayESCTemperature(wgt, theBox, lx, ly)
+    local escT = theBox:box({x = lx, y = ly})
+    escT:label({text = "ESC Temp", x = 0, y = 0, font = FS.FONT_6, color = rf2DashFuncs.TextColourTitle})
+    escT:label({text = function() return wgt.values.EscT_str end , x = 0, y = 15, font = FS.FONT_12, color = rf2DashFuncs.TextColourItem})
 end
 
 function display_BatteryVoltage(wgt, theBox, lx, ly)
     local bRXVolts = theBox:box({x = lx, y = ly})
-    bRXVolts:label({text = "Batt Voltage", x = 0, y = 0, font = FS.FONT_6, color = wgt.options.textColorTitle})
+    bRXVolts:label({text = "Batt Voltage", x = 0, y = 0, font = FS.FONT_6, color = rf2DashFuncs.TextColourTitle})
     bRXVolts:label({text = function() return string.format("%.02fv", wgt.values.vbat) end , x = 0, y = 15, font = FS.FONT_12, color = GREEN})
 end
 
@@ -359,8 +405,8 @@ function updateCurr(wgt)
     wgt.values.curr_max = curr_max
     wgt.values.curr_percent = math.min(100, math.floor(100 * (curr / curr_top)))
     wgt.values.curr_max_percent = math.min(100, math.floor(100 * (curr_max / curr_top)))
-    wgt.values.curr_str = string.format("%dA", wgt.values.curr)
-    wgt.values.curr_max_str = string.format("%dA", wgt.values.curr_max)
+    wgt.values.curr_str = string.format("%0.01fA", wgt.values.curr)
+    wgt.values.curr_max_str = string.format("%0.01fA", wgt.values.curr_max)
 end
 
 function updateTemperature(wgt)
@@ -427,5 +473,20 @@ function updateTXBatVoltage(wgt)
     wgt.values.vTXVoltsPercent_txt = string.format("%d%%", wgt.values.vTXVoltsPercent)
 end
 
+-- If capa_percent is divisible by BatteryCallout then let them know
+local announcedBatPercent = false
+
+function readoutBatteryPercentage(wgt)
+	if (wgt.options.BatteryCallout == 0) then wgt.options.BatteryCallout = 10 end
+	
+	if (math.fmod(wgt.values.capa_percent, wgt.options.BatteryCallout) == 0)  then
+		if (announcedBatPercent == false) then 
+			playNumber(wgt.values.capa_percent,13,0) 
+		end
+		announcedBatPercent = true
+	else
+		announcedBatPercent = false
+	end
+end
 
 return rf2DashFuncs

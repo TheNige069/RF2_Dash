@@ -20,18 +20,6 @@ local function log(fmt, ...)
     return
 end
 
-local function displayRPM(theBox, lx, ly, textSize)
-    local titleGreyColor = LIGHTGREY
-	
-    theBox:build({{type = "box", x = lx, y = ly,
-        children = {
-            {type = "label", text = "RPM", x = 0, y = 0, font = FS.FONT_6, color = titleGreyColor},
-            {type = "label", text = function() return wgt.values.rpm_str end, x = 0, y = 10, font = textSize, color = wgt.options.textColor},
-        }
-    }})
-	
-end
-
 local function display_ModelImage(theBox, lx, ly)
     -- Model image
     local bImageArea = theBox:box({x = lx, y = ly})
@@ -42,13 +30,13 @@ local function display_ModelImage(theBox, lx, ly)
     -- Craft name
     local bCraftName = theBox:box({x = lx, y = ly + 75})
     bCraftName:rectangle({x = 10, y = 20, w = rf2DashFuncs.isizew - 20, h = 20, filled = true, rounded = 8, color = DARKGREY, opacity = 200})
-    bCraftName:label({text = function() return wgt.values.craft_name end,  x = 15, y = 20, font = FS.FONT_8, color = wgt.options.textColor})
+    bCraftName:label({text = function() return wgt.values.craft_name end,  x = 15, y = 20, font = FS.FONT_8, color = rf2DashFuncs.TextColourItem})
 end
 
 local function display_TXVoltage(theBox, lx, ly)
     -- TX voltage
     local bTXVolts = theBox:box({x = lx, y = ly})
-    bTXVolts:label({text = "TX Battery", x = 0, y = 0, font = FS.FONT_6, color = wgt.options.textColorTitle})
+    bTXVolts:label({text = "TX Battery", x = 0, y = 0, font = FS.FONT_6, color = rf2DashFuncs.TextColourTitle})
     bTXVolts:label({text = function() return string.format("%.02fv", wgt.values.vTXVolts) end , x = 0, y = 12, font = FS.FONT_12, color=function() return wgt.values.vTXVoltsColor end})
     buildBarGuage(bTXVolts, wgt,
         {x = 0, y = 40,w = 110,h = 20,segments_w = 20, color = WHITE, bg_color = GREY, cath_w = 10, cath_h = 8, segments_h = 20, cath = true, fence_thickness = 1},
@@ -60,8 +48,8 @@ end
 local function display_FlightMode(theBox, lx, ly)
     theBox:build({{type = "box", x = lx, y = ly,
         children = {
-            {type = "label", text = "Flight Mode", x = 0, y = 0, font = FS.FONT_6, color = wgt.options.textColorTitle},
-            {type = "label", text = function() return wgt.values.fmode_str end , x = 2, y = 10, font = FS.FONT_16 ,color = wgt.options.textColor},
+            {type = "label", text = "Flight Mode", x = 0, y = 0, font = FS.FONT_6, color = rf2DashFuncs.TextColourTitle},
+            {type = "label", text = function() return wgt.values.fmode_str end , x = 2, y = 10, font = FS.FONT_16 ,color = rf2DashFuncs.TextColourItem},
         }
     }})
 end
@@ -77,54 +65,24 @@ local function build_ui_nitro(wgt)
     local pMain = lvgl.box({x = 0, y = 0})
 
 	displayRatePIDprofile(wgt, pMain, 44, 0)
-
-    -- Timer
 	display_timer(wgt, pMain, 135, 50)
-
-    -- RPM
-	displayRPM(pMain, 140, 115, FS.FONT_38)
-
-	--display_TXVoltage(pMain, 5, 185) -- Now included in the statusbar
+	displayRPM(wgt, pMain, 140, 115, FS.FONT_38)
 	display_ModelImage(pMain, 325, 5)
-    -- No Connection
     display_NoConnection(wgt, 325, 10)
-
-    -- failed to arm flags
 	build_FailToArmFlags(wgt, pMain, 100, 25)
 	build_statusbar(wgt, 0, wgt.zone.h - 20, 0)
-
 	display_RXVoltage(wgt, pMain, 0, 205, false)
-
-    -- Flight mode
 	display_FlightMode(pMain, 150, 195)
-
-    -- Are we armed?
 	display_ArmState(wgt, pMain, 140, 5)
-	
-    -- Governor state
 	display_GovernorState(wgt, pMain, 325, 130)
 
     --pMain:build({{type = "box", x = 325, y = 175,
     --    children = {
-	--		{type = "label", text = function() return string.format("Max: %s", wgt.values.vTXVoltsMax) end, x = 0, y = 0, font = FS.FONT_6, color = wgt.options.textColorTitle},
-	--		{type = "label", text = function() return string.format("Min: %s", wgt.values.vTXVoltsMin) end, x = 0, y = 20, font = FS.FONT_6, color = wgt.options.textColorTitle},
-	--		{type = "label", text = function() return string.format("Warn: %s", wgt.values.vTXVoltsWarn) end, x = 0, y = 40, font = FS.FONT_6, color = wgt.options.textColorTitle},
+	--		{type = "label", text = function() return string.format("Max: %s", wgt.values.vTXVoltsMax) end, x = 0, y = 0, font = FS.FONT_6, color = rf2DashFuncs.TextColourTitle},
+	--		{type = "label", text = function() return string.format("Min: %s", wgt.values.vTXVoltsMin) end, x = 0, y = 20, font = FS.FONT_6, color = rf2DashFuncs.TextColourTitle},
+	--		{type = "label", text = function() return string.format("Warn: %s", wgt.values.vTXVoltsWarn) end, x = 0, y = 40, font = FS.FONT_6, color = rf2DashFuncs.TextColourTitle},
     --    }
     --}})
-end
-
--- To display the current time on the dashboard
--- This is the local time as set in the transmitter, not the time from any of the timers
-local function updateCurrentTime(wgt)
-	local theDateTime = getDateTime()
-	
-	--log("rf2_dash: updateCurrentTime: Hours: %02d:%02d", theDateTime.hour, theDateTime.min)
-	wgt.values.timeCurrent = string.format("%02d:%02d TheNige069", theDateTime.hour, theDateTime.min)
-	
-end
-
-local function updateCraftName(wgt)
-	wgt.values.craft_name = string.gsub(model.getInfo().name, "^>", "")	
 end
 
 local function updateTimeCount(wgt)
