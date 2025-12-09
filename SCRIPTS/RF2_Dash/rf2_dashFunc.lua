@@ -290,7 +290,7 @@ end
 function rf2DashFuncs.isFileExist(file_name)
     local hFile = io.open(file_name, "r")
     if hFile == nil then
-        log("rf2_dash: isFileExist: file not exist - %s", file_name)
+        rf2DashFuncs.log("rf2_dash: isFileExist: file not exist - %s", file_name)
         return false
     end
     io.close(hFile)
