@@ -4,193 +4,7 @@ local baseDir = "/WIDGETS/rf2_dashE/"
 
 local wgt = {}
 
-local function loadFuncs()
-	if not rf2DashFuncs then
-		rf2DashFuncs = loadScript(script_dir .. "rf2_dashFunc.lua")
-	end
-	return rf2DashFuncs()
-end
-local rf2DashFuncs = loadFuncs()
-
-local img_box = nil
-local err_img = bitmap.open(script_dir.."img/no_connection_wr.png")
-
-local function build_ui_electric(wgt)
-    local dx = 20
-
-    lvgl.clear()
-
-    -- global
-    lvgl.rectangle({x = 0, y = 0, w = LCD_W, h = LCD_H, color = lcd.RGB(0x111111), filled = true})
-    local pMain = lvgl.box({x = 0, y = 0})
-
-	-- Model image
-    local bImageArea = pMain:box({x = 325, y = 5})
-	img_box = bImageArea:rectangle({x = 0, y = 0, w = rf2DashFuncs.isizew, h = rf2DashFuncs.isizeh, thickness = 4, rounded = 15, filled = false, color = GREY})
-	
-    -- Craft name
-    local bCraftName = pMain:box({x = 325, y = 80})
-    bCraftName:rectangle({x = 10, y = 20, w = rf2DashFuncs.isizew - 20, h = 20, filled = true, rounded = 8, color = DARKGREY, opacity = 200})
-    bCraftName:label({text = function() return wgt.values.craft_name end,  x = 15, y = 20, font = FS.FONT_8, color = rf2DashFuncs.TextColourItem})
-
-    display_NoConnection(wgt, 325, 10)
-	display_AmpsGauge(wgt, pMain, {x = 0, y = 0, h = 180, w = 180}, lcd.RGB(0xFF623F))
-	display_MAHUsedGauge(wgt, pMain, {x = 170, y = 0, h = 180, w = 180}, lcd.RGB(0x62FF3F))
-	displayRPM(wgt, pMain, 1, 140, FS.FONT_16)
-	displayESCTemperature(wgt, pMain, 110, 140)
-	display_BatteryVoltage(wgt, pMain, 200, 140)	
-	display_GovernorState(wgt, pMain, 325, 140)
-	display_ArmState(wgt, pMain, 160, 200)
-	display_RXVoltage(wgt, pMain, 0, 205, false)
-	displayRatePIDprofile(wgt, pMain, 90, 205)
-	display_timer(wgt, pMain, 290, 190)
-	build_statusbar(wgt, 0, wgt.zone.h - 20, 0)
-	build_FailToArmFlags(wgt, pMain, 100, 25)
-end
-
-local function updateRpm(wgt)
-    local Hspd = getValue("Hspd")
-	
-    if inSimu then Hspd = 1800 end
-	
-    wgt.values.rpm = Hspd
-    wgt.values.rpm_str = string.format("%s",Hspd)
-end
-
-local function updateFlightMode(wgt)
-    local fmno, fmname = getFlightMode()
-
-    wgt.values.fmode = fmno
-    wgt.values.fmode_str = fmname
-end
-
--- Current PID profile
-local function updateProfiles(wgt)
-    local profile_id = getValue("PID#")
-	
-    if profile_id > 0 then
-        wgt.values.profile_id = profile_id
-    else
-        wgt.values.profile_id = "---"
-    end
-    wgt.values.profile_id_str = string.format("%s", wgt.values.profile_id)
-
-    -- Current Rate profile
-    local rate_id = getValue("RTE#")
-    if rate_id > 0 then
-        wgt.values.rate_id = rate_id
-    else
-        wgt.values.rate_id = "---"
-    end
-    wgt.values.rate_id_str = string.format("%s", wgt.values.rate_id)
-end
-
-function isArmed()
-    local flags = getValue("ARM")
-    if flags == nil then
-        return false
-    end
-
-    local armFlag = bit32.band(flags, 0x01)
-    return armFlag == 1
-end
-
-local function updateArm(wgt)
-    wgt.values.is_arm = isArmed()
-	local flags = getValue("ARMD")
-
-    local flagList = armingDisableFlagsList(flags)
-	
-    wgt.values.arm_disable_flags_list = flagList
-    wgt.values.arm_disable_flags_txt = ""
-    wgt.values.arm_fail = false
-
-    if flagList ~= nil then
-        if (#flagList == 0) then
-            wgt.values.arm_fail = false
-        else
-            wgt.values.arm_fail = true
-            for i in pairs(flagList) do
-                wgt.values.arm_disable_flags_txt = wgt.values.arm_disable_flags_txt .. flagList[i] .. "\n"
-            end
-        end
-    end
-end
-
-local function updateELRS(wgt)
-    wgt.values.rqly = getValue("RQly")
-    local rqly_min = getValue("RQly-")
-    if rqly_min > 0 then
-        wgt.values.rqly_min = rqly_min
-    end
-    wgt.values.rqly_str = string.format("%d%%", wgt.values.rqly)
-    wgt.values.rqly_min_str = string.format("%d%%", wgt.values.rqly_min)
-end
-
--- RX battery or BEC voltage
-local function updateVbec(wgt)
-	wgt.values.vBecUsed = getValue("Vbec")
-	
-    if inSimu then 
-		wgt.values.vBecUsed = getValue("RxBt")
-	end
-
-	if wgt.values.vBecMax < 1 then
-		wgt.values.vBecMax = 8.4
-	end
-	if wgt.values.vBecMin < 1 then
-		wgt.values.vBecMin = 7.4
-	end
-	
-    if wgt.values.vBecUsed == nil or wgt.values.vBecUsed == nan or wgt.values.vBecUsed < 0 then
-        wgt.values.vBecUsed = 8.4
-    end
-	
-    wgt.values.vBecPercent = math.floor(100 - (100 * (wgt.values.vBecMax - wgt.values.vBecUsed) // (wgt.values.vBecMax - wgt.values.vBecMin)))
-	
-	if wgt.values.vBecPercent > 100 then wgt.values.vBecPercent = 100 end
-	
-    local p = wgt.values.vBecPercent
-    if (p < 10) then
-        wgt.values.vBecColor = RED
-    elseif (p < 40) then
-        wgt.values.vBecColor = ORANGE
-    elseif (p < 60) then
-        wgt.values.vBecColor = lcd.RGB(0x00963A) --GREEN
-    else
-        wgt.values.vBecColor = GREEN
-    end
-
-    wgt.values.vBecPercent_txt = string.format("%d%%", wgt.values.vBecPercent)
-end
-
-local function updateImage(wgt)
-    local newCraftName = wgt.values.craft_name
-	
-    if newCraftName == wgt.values.img_craft_name_for_image then
-        return
-    end
-
-    local imageName = script_dir .. "/img/" .. newCraftName..".png"
-
-    if isFileExist(imageName) == false then
-        imageName = "/IMAGES/" .. model.getInfo().bitmap
-
-        if imageName == "" or isFileExist(imageName) == false then
-            imageName = script_dir.."img/rf2_logo.png"
-        end
-    end
-
-    if imageName ~= wgt.values.img_last_name then
-        img_box:clear()
-		img_box:image({file = imageName, x = 0, y = 0, w = rf2DashFuncs.isizew, h = rf2DashFuncs.isizeh, fill = false})
-
-        wgt.values.img_last_name = imageName
-        wgt.values.img_craft_name_for_image = newCraftName
-    end
-end
-
-local function resetWidgetValues(wgt)
+--local function resetWidgetValues(wgt)
     wgt.values = {
         craft_name = "Not connected",
         timer_str = "--:--",
@@ -223,6 +37,7 @@ local function resetWidgetValues(wgt)
         EscT_percent = 0,
         EscT_max_percent = 0,
 
+        img_box = nil,
         img_last_name = "---",
         img_craft_name_for_image = "---",
 		
@@ -257,30 +72,252 @@ local function resetWidgetValues(wgt)
 		govState = 0, 
 		govState_str = "---",
     }
+--end
+
+
+local function loadFuncs()
+	if not rf2DashFuncs then
+		rf2DashFuncs = loadScript(script_dir .. "rf2_dashFunc.lua")
+	end
+	return rf2DashFuncs()
+end
+local rf2DashFuncs = loadFuncs()
+
+--local img_box = nil
+local err_img = bitmap.open(script_dir.."img/no_connection_wr.png")
+
+--function rf2DashFuncs.calEndAngle(percent, minAngle, maxAngle)
+local function calEndAngle(percent, minAngle, maxAngle)
+	if percent == nil then return 0 end
+	local v = ((percent / 100) * (maxAngle - minAngle)) + minAngle
+	return v
+end
+
+local function display_AmpsGauge(wgt, theBox, boxSize, gaugeColour)
+    local g_thick = 20
+    local gm_thick = 10
+    local g_angle_min = 140
+    local g_angle_max = 400
+    local centre_x = (boxSize.w / 2) - g_thick --+ boxSize.x
+    local centre_y = (boxSize.h / 2) - gm_thick --+ boxSize.y
+    local g_rad = math.min((boxSize.w / 2), (boxSize.h / 2)) - g_thick - 2
+    local gm_rad =  g_rad - g_thick --+ (g_thick / 2)
+
+    local bCurr = theBox:box({x = boxSize.x, y = boxSize.y})
+
+    bCurr:label({text = "Amps",  x = 0, y = 0, font = FS.FONT_6, color = rf2DashFuncs.TextColourTitle})
+    -- Current value
+    bCurr:label({x = centre_x - g_thick, y = (boxSize.h / 2) - g_thick, text = function() return wgt.values.curr_str end, font = FS.FONT_8, color = rf2DashFuncs.TextColourItem})
+    -- Max current value
+    bCurr:label({x = centre_x - g_thick, y = centre_y + 20, text = function() return wgt.values.curr_max_str end, font = FS.FONT_8, color = rf2DashFuncs.TextColourItem})
+    bCurr:arc({x = centre_x, y = centre_y, radius = g_rad, thickness = g_thick, startAngle = g_angle_min, endAngle = g_angle_max, rounded = true, color = lcd.RGB(0x222222)})
+    bCurr:arc({x = centre_x, y = centre_y, radius = gm_rad, thickness = gm_thick, startAngle = g_angle_min, endAngle = function() return calEndAngle(wgt.values.curr_max_percent, g_angle_min, g_angle_max) end, color = gaugeColour, opacity = 180})
+    bCurr:arc({x = centre_x, y = centre_y, radius = g_rad, thickness = g_thick, startAngle = g_angle_min, endAngle = function() return calEndAngle(wgt.values.curr_percent, g_angle_min, g_angle_max) end, color = gaugeColour})
+end
+
+local function display_MAHUsedGauge(wgt, theBox, boxSize, gaugeColour)
+    local g_thick = 20
+    local gm_thick = 10
+    local g_angle_min = 140
+    local g_angle_max = 400
+    local centre_x = (boxSize.w / 2) - g_thick --+ boxSize.x
+    local centre_y = (boxSize.h / 2) - gm_thick --+ boxSize.y
+    local g_rad = math.min((boxSize.w / 2), (boxSize.h / 2)) - g_thick - 2
+    local gm_rad =  g_rad - g_thick --+ (g_thick / 2)
+	
+    local bCapa = theBox:box({x = boxSize.x, y = boxSize.y})
+
+    bCapa:label({text = "MA Used",  x = 0, y = 0, font = FS.FONT_6, color = rf2DashFuncs.TextColourTitle})
+    -- Capacity percentage
+	--bCapa:label({x = centre_x - g_thick, y = (boxSize.h / 2) - (2 * g_thick), text = function() return wgt.values.capa_percent.."%" end, font = FS.FONT_8, color = rf2DashFuncs.TextColourItem})
+	bCapa:label({x = centre_x - g_thick, y = (boxSize.h / 2) - (2 * g_thick), text = function() if wgt.values.capaRem_percent == nil then wgt.values.capaRem_percent = 0 end return wgt.values.capaRem_percent .. "%" end, font = FS.FONT_8, color = rf2DashFuncs.TextColourItem})
+    -- Capacity used 
+	bCapa:label({x = centre_x - g_thick-10, y = (boxSize.h / 2) - g_thick, text = function() return wgt.values.capa_str end, font = FS.FONT_8, color = rf2DashFuncs.TextColourItem})
+    -- Max Capacity
+	bCapa:label({x = centre_x - g_thick-12, y = centre_y + 30, text = function() return wgt.values.capa_max_str end, font = FS.FONT_8, color = rf2DashFuncs.TextColourItem})
+    bCapa:arc({x = centre_x, y = centre_y, radius = g_rad, thickness = g_thick, startAngle = g_angle_min, endAngle = g_angle_max, rounded = true, color = lcd.RGB(0x222222)})
+    bCapa:arc({x = centre_x, y = centre_y, radius = gm_rad, thickness = gm_thick, startAngle = g_angle_min, endAngle = function() return calEndAngle(wgt.values.capa_max_percent, g_angle_min, g_angle_max) end, color = gaugeColour, opacity = 180})
+    --bCapa:arc({x = centre_x, y = centre_y, radius = g_rad, thickness = g_thick, startAngle = g_angle_min, endAngle = function() return calEndAngle(wgt.values.capa_percent, g_angle_min, g_angle_max) end, color = gaugeColour})
+    bCapa:arc({x = centre_x, y = centre_y, radius = g_rad, thickness = g_thick, startAngle = g_angle_min, endAngle = function() return calEndAngle(wgt.values.capaRem_percent, g_angle_min, g_angle_max) end, color = gaugeColour})
+end
+
+local function displayESCTemperature(wgt, theBox, lx, ly)
+    local escT = theBox:box({x = lx, y = ly})
+    escT:label({text = "ESC Temp", x = 0, y = 0, font = FS.FONT_6, color = rf2DashFuncs.TextColourTitle})
+    escT:label({text = function() return wgt.values.EscT_str end , x = 0, y = 15, font = FS.FONT_12, color = rf2DashFuncs.TextColourItem})
+end
+
+local function display_BatteryVoltage(wgt, theBox, lx, ly)
+    local bRXVolts = theBox:box({x = lx, y = ly})
+    bRXVolts:label({text = "Batt Voltage", x = 0, y = 0, font = FS.FONT_6, color = rf2DashFuncs.TextColourTitle})
+    bRXVolts:label({text = function() return string.format("%.02fv", wgt.values.vbat) end , x = 0, y = 15, font = FS.FONT_12, color = GREEN})
+end
+
+local function display_ModelImage(wgt, theBox, lx, ly)
+    -- Model image
+    local bImageArea = theBox:box({x = lx, y = ly})
+    bImageArea:rectangle({x = 0, y = 0, w = rf2DashFuncs.isizew, h = rf2DashFuncs.isizeh, thickness = 4, rounded = 15, filled = false, color = GREY})
+    local bImg = bImageArea:box({})
+    wgt.values.img_box = bImg
+
+    -- Craft name
+    local bCraftName = theBox:box({x = lx, y = ly + 75})
+    bCraftName:rectangle({x = 10, y = 20, w = rf2DashFuncs.isizew - 20, h = 20, filled = true, rounded = 8, color = DARKGREY, opacity = 200})
+    bCraftName:label({text = function() return wgt.values.craft_name end,  x = 15, y = 20, font = FS.FONT_8, color = rf2DashFuncs.TextColourItem})
+end
+
+local function build_ui_electric(wgt)
+    local dx = 20
+
+    lvgl.clear()
+
+    -- global
+    lvgl.rectangle({x = 0, y = 0, w = LCD_W, h = LCD_H, color = lcd.RGB(0x111111), filled = true})
+    local pMain = lvgl.box({x = 0, y = 0})
+
+	-- Model image
+	display_ModelImage(wgt, pMain, 325, 5)
+    --local bImageArea = pMain:box({x = 325, y = 5})
+	--wgt.values.img_box = bImageArea:rectangle({x = 0, y = 0, w = rf2DashFuncs.isizew, h = rf2DashFuncs.isizeh, thickness = 4, rounded = 15, filled = false, color = GREY})
+	
+    -- Craft name
+    --local bCraftName = pMain:box({x = 325, y = 80})
+    --bCraftName:rectangle({x = 10, y = 20, w = rf2DashFuncs.isizew - 20, h = 20, filled = true, rounded = 8, color = DARKGREY, opacity = 200})
+    --bCraftName:label({text = function() return wgt.values.craft_name end,  x = 15, y = 20, font = FS.FONT_8, color = rf2DashFuncs.TextColourItem})
+
+    rf2DashFuncs.display_NoConnection(wgt, 325, 10)
+	display_AmpsGauge(wgt, pMain, {x = 0, y = 0, h = 180, w = 180}, lcd.RGB(0xFF623F))
+	display_MAHUsedGauge(wgt, pMain, {x = 170, y = 0, h = 180, w = 180}, lcd.RGB(0x62FF3F))
+	rf2DashFuncs.display_RPM(wgt, pMain, 1, 140, FS.FONT_16)
+	displayESCTemperature(wgt, pMain, 110, 140)
+	display_BatteryVoltage(wgt, pMain, 200, 140)
+	rf2DashFuncs.display_GovernorState(wgt, pMain, 325, 130)
+	rf2DashFuncs.display_ArmState(wgt, pMain, 160, 200)
+	rf2DashFuncs.display_RXVoltage(wgt, pMain, 0, 205, false)
+	rf2DashFuncs.displayRatePIDprofile(wgt, pMain, 90, 205)
+	rf2DashFuncs.display_timer(wgt, pMain, 290, 190)
+	rf2DashFuncs.display_statusbar(wgt, 0, wgt.zone.h - 20, 0)
+	rf2DashFuncs.display_FailToArmFlags(wgt, pMain, 100, 25)
+end
+
+-- If capa_percent is divisible by BatteryCallout then let them know
+local announcedBatPercent = false
+
+local function readoutBatteryPercentage(wgt)
+	if (wgt.options.BatteryCallout == 0) then wgt.options.BatteryCallout = 10 end
+
+	if (math.fmod(wgt.values.capaRem_percent, wgt.options.BatteryCallout) == 0)  then
+		if (announcedBatPercent == false) then 
+			playNumber(wgt.values.capaRem_percent,13,0)
+		end
+		announcedBatPercent = true
+	else
+		announcedBatPercent = false
+	end
+end
+
+local function updateMAUsed(wgt)
+    local capa_top = wgt.options.capacityTop
+    local capa = getSourceValue("Capa")
+    if capa == nil then capa = 0 end
+
+    local capa_max = wgt.options.BattCapa --getValue("Capa+")
+	capa_max = math.max(capa_max, capa)
+
+    if rf2DashFuncs.inSimu then
+        --capa = 0
+        --capa_max = 5000
+    end
+
+    --BattCapMin %
+    -- Todo: Need to fix roll-around on gauge here and in display_MAHUsedGauge
+    local battCapCanUse = ((100 - wgt.options.BattCapMin) / 100) * capa_max
+
+    wgt.values.capa = capa
+    --wgt.values.capaRem = capa_max - capa
+    --wgt.values.capaRem_percent = math.min(100, math.floor(100 * (wgt.values.capaRem / capa_max)))
+    wgt.values.capaRem = battCapCanUse - capa
+    wgt.values.capaRem_percent = math.min(100, math.floor(100 * (wgt.values.capaRem / battCapCanUse)))
+    wgt.values.capa_max = capa_max
+    wgt.values.capa_percent = math.min(100, math.floor(100 * (capa / capa_max)))
+    wgt.values.capa_max_percent = math.min(100, math.floor(100 * (capa_max / capa_max)))
+    --wgt.values.capa_str = string.format("%0000dma", wgt.values.capa)
+    wgt.values.capa_str = string.format("%0000dma", wgt.values.capaRem)
+    wgt.values.capa_max_str = string.format("%0000dma", wgt.values.capa_max)
+
+    readoutBatteryPercentage(wgt)
+end
+
+local function updateCurr(wgt)
+    local curr_top = wgt.options.currTop
+    local curr = getSourceValue("Curr")
+    if curr == nil then curr = 0 end
+
+    local curr_max = getSourceValue("Curr+")
+    if curr_max == nil then curr_max = 0 end
+
+	curr_max = math.max(curr_max, curr)
+
+    if rf2DashFuncs.inSimu then
+        curr = 205
+        curr_max = 255
+    end
+	
+    wgt.values.curr = curr
+    wgt.values.curr_max = curr_max
+    wgt.values.curr_percent = math.min(100, math.floor(100 * (curr / curr_top)))
+    wgt.values.curr_max_percent = math.min(100, math.floor(100 * (curr_max / curr_top)))
+    wgt.values.curr_str = string.format("%0.01fA", wgt.values.curr)
+    wgt.values.curr_max_str = string.format("%0.01fA", wgt.values.curr_max)
+end
+
+local function updateImage(wgt)
+    local newCraftName = wgt.values.craft_name
+	
+    if newCraftName == wgt.values.img_craft_name_for_image then
+        return
+    end
+
+    local imageName = script_dir .. "/img/" .. newCraftName..".png"
+
+    if rf2DashFuncs.isFileExist(imageName) == false then
+        imageName = "/IMAGES/" .. model.getInfo().bitmap
+
+        if imageName == "" or rf2DashFuncs.isFileExist(imageName) == false then
+            imageName = script_dir.."img/rf2_logo.png"
+        end
+    end
+
+    if imageName ~= wgt.values.img_last_name then
+        wgt.values.img_box:clear()
+		wgt.values.img_box:image({file = imageName, x = 0, y = 0, w = rf2DashFuncs.isizew, h = rf2DashFuncs.isizeh, fill = false})
+
+        wgt.values.img_last_name = imageName
+        wgt.values.img_craft_name_for_image = newCraftName
+    end
 end
 
 local function refreshUINoConn(wgt)
-	updateCurrentTime(wgt)
-	updateTXBatVoltage(wgt)
+	rf2DashFuncs.updateCurrentTime(wgt)
+	rf2DashFuncs.updateTXBatVoltage(wgt)
 end
 
 local function refreshUI(wgt)
-    updateCraftName(wgt)
+    rf2DashFuncs.updateCraftName(wgt)
     updateImage(wgt)
-    updateTimeCount(wgt)
-    updateRpm(wgt)
-    updateCell(wgt)
+    rf2DashFuncs.updateTimeCount(wgt)
+    rf2DashFuncs.updateRpm(wgt)
+    rf2DashFuncs.updateCell(wgt)
     updateCurr(wgt)
 	updateMAUsed(wgt)
-	updateGovState(wgt)
-    updateProfiles(wgt)
-	updateFlightMode(wgt)
-	updateELRS(wgt)
-    updateArm(wgt)
-	updateVbec(wgt)
+	rf2DashFuncs.updateGovState(wgt)
+    rf2DashFuncs.updateProfiles(wgt)
+	rf2DashFuncs.updateFlightMode(wgt)
+	rf2DashFuncs.updateELRS(wgt)
+    rf2DashFuncs.updateArm(wgt)
+	rf2DashFuncs.updateVbec(wgt)
+    rf2DashFuncs.updateESCTemperature(wgt)
 
-    updateTemperature(wgt)
-	
 	refreshUINoConn(wgt)
 end
 
@@ -291,7 +328,7 @@ local function update(wgt, options)
     wgt.options = options
     wgt.not_connected_error = "Not connected"
 
-    resetWidgetValues(wgt)
+    --resetWidgetValues(wgt)
 	
     build_ui_electric(wgt)
 	
@@ -314,7 +351,7 @@ local function refresh(wgt, event, touchState)
     -- wgt.not_connected_error = "Not connected"
 
     if wgt.is_connected == false then
-        resetWidgetValues(wgt)
+        --resetWidgetValues(wgt)
 		-- Refresh items that don't rely on being connected
 		refreshUINoConn(wgt)
         return

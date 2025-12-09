@@ -7,9 +7,6 @@ local M = {
         {"BattCapa"             , VALUE , 5000, 0, 10000 },
         {"BattCapMin"           , VALUE , 30, 0, 100 },
 		{"BatteryCallout"	    , VALUE , 10, 10, 50},
-		{"FlightBattery"	    , SOURCE, 267},
-		{"FlightBatteryCap" 	, SOURCE, 267},
-		{"FlightBatteryCurr"	, SOURCE, 267},
     },
 
     translate = function(name)
@@ -20,9 +17,6 @@ local M = {
 			BattCapa = "Battery Capacity",
 			BattCapMin = "Battery Capacity min %",
 			BatteryCallout = "How often to callout battery %",
-            FlightBattery = "Main flight battery source",
-			FlightBatteryCap = "Battery Capacity source",
-			FlightBatteryCurr = "Battery Current source",
         }
         return translations[name]
     end
