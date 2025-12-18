@@ -89,7 +89,6 @@ function rf2DashFuncs.updateVbec(wgt)
     wgt.values.vBecPercent_txt = string.format("%d%%", wgt.values.vBecPercent)
 end
 
-
 -- To display the current time on the dashboard
 -- This is the local time as set in the transmitter, not the time from any of the timers
 function rf2DashFuncs.updateCurrentTime(wgt)
@@ -462,8 +461,12 @@ function rf2DashFuncs.updateESCTemperature(wgt)
 end
 
 function rf2DashFuncs.updateCell(wgt)
-    local vbat = getSourceValue("Vbat")
-    if vbat == nil then vbat = 0 end
+    local vbat = getSourceValue("Vbat") or 0.0
+
+    if (wgt.vbatOnConnect == nil) then wgt.vbatOnConnect = vbat end
+    if rf2DashFuncs.inSimu then wgt.vbatOnConnect = 22.2 end
+
+    --if vbat == nil then vbat = 0 end
 
     if rf2DashFuncs.inSimu then
         vbat = 22.2

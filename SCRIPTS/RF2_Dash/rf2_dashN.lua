@@ -4,68 +4,66 @@ local baseDir = "/WIDGETS/rf2_dashN/"
 
 local wgt = {}
 
---local function resetWidgetValues(wgt)
-    wgt.values = {
-        craft_name = "Not connected",
-        timer_str = "--:--",
-		timerIsNeg = false,
-        rpm = 0,
-        rpm_str = "0",
+wgt.values = {
+    craft_name = "Not connected",
+    timer_str = "--:--",
+    timerIsNeg = false,
+    rpm = 0,
+    rpm_str = "0",
 
-        vbat = 0,
-        vcel = 0,
-        cell_percent = 0,
-        volt = 0,
-        curr = 0,
-        curr_max = 0,
-        curr_str = "0",
-		curr_max_str = "0",
-        curr_percent = 0,
-        curr_max_percent = 0,
+    --vbat = 0,
+    --vcel = 0,
+    --cell_percent = 0,
+    --volt = 0,
+    --curr = 0,
+    --curr_max = 0,
+    --curr_str = "0",
+    --curr_max_str = "0",
+    --curr_percent = 0,
+    --curr_max_percent = 0,
 
-        EscT = 0,
-        EscT_max = 0,
-        EscT_str = "0",
-        EscT_max_str = "0",
-        EscT_percent = 0,
-        EscT_max_percent = 0,
+    --EscT = 0,
+    --EscT_max = 0,
+    --EscT_str = "0",
+    --EscT_max_str = "0",
+    --EscT_percent = 0,
+    --EscT_max_percent = 0,
 
-        img_box = nil,
-        img_last_name = "---",
-        img_craft_name_for_image = "---",
+    img_box = nil,
+    img_last_name = "---",
+    img_craft_name_for_image = "---",
 
-		profile_id_str = "--",
-		rate_id_str = "--",
+    profile_id_str = "--",
+    rate_id_str = "--",
 
-        rqly = 0,
-        rqly_min = 0,
-        rqly_str = 0,
-        rqly_min_str = 0,
+    rqly = 0,
+    rqly_min = 0,
+    rqly_str = 0,
+    rqly_min_str = 0,
 
-		fmode = 0,
-		fmode_str = "----",
+    fmode = 0,
+    fmode_str = "----",
 
-        vBecMax = 8.4,
-		vBecMin = 7 ,
-        vBecUsed = 0,
-        vBecPercent = 0,
-        vBecPercent_txt = "---%%",
-		vBecColor = RED,
+    vBecMax = 8.4,
+    vBecMin = 7 ,
+    vBecUsed = 0,
+    vBecPercent = 0,
+    vBecPercent_txt = "---%%",
+    vBecColor = RED,
 
-		vTXVolts = 0,
-		vTXVoltsMax = -1, --8.4,
-		vTXVoltsMin = -1, --6.6,
-		vTXVoltsWarn = -1, --7.0,
-		vTXVoltsPercent = 0,
-		vTXVoltsColor = RED,
-		vTXVoltsPercent_txt = "---%%",
-		
-		timeCurrent = "TheNige: --:--",
-		
-		govState = 0, 
-		govState_str = "---",
-    }
---end
+    vTXVolts = 0,
+    vTXVoltsMax = -1, --8.4,
+    vTXVoltsMin = -1, --6.6,
+    vTXVoltsWarn = -1, --7.0,
+    vTXVoltsPercent = 0,
+    vTXVoltsColor = RED,
+    vTXVoltsPercent_txt = "---%%",
+
+    timeCurrent = "TheNige: --:--",
+
+    govState = 0, 
+    govState_str = "---",
+}
 
 local function loadFuncs()
 	if not rf2DashFuncs then
@@ -167,7 +165,7 @@ local function refreshUI(wgt)
     updateImage(wgt)
     rf2DashFuncs.updateTimeCount(wgt)
     rf2DashFuncs.updateRpm(wgt)
-    rf2DashFuncs.updateCell(wgt)
+    --rf2DashFuncs.updateCell(wgt)
 	rf2DashFuncs.updateGovState(wgt)
     rf2DashFuncs.updateProfiles(wgt)
 	rf2DashFuncs.updateFlightMode(wgt)

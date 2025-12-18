@@ -4,76 +4,77 @@ local baseDir = "/WIDGETS/rf2_dashE/"
 
 local wgt = {}
 
---local function resetWidgetValues(wgt)
-    wgt.values = {
-        craft_name = "Not connected",
-        timer_str = "--:--",
-		timerIsNeg = false,
-        rpm = 0,
-        rpm_str = "0",
+wgt.values = {
+    craft_name = "Not connected",
+    timer_str = "--:--",
+    timerIsNeg = false,
+    rpm = 0,
+    rpm_str = "0",
 
-        vbat = 0,
-        --vcel = 0,
-        cell_percent = 0,
-        volt = 0,
-        curr = 0,
-        curr_max = 0,
-        curr_str = "0",
-		curr_max_str = "0",
-        curr_percent = 0,
-        curr_max_percent = 0,
+    vbat = 0,
+    vbatOnConnect = nil,  -- Voltage on connection
+    --vcel = 0,
+    cell_percent = 0,
+    volt = 0,
+    curr = 0,
+    curr_max = 0,
+    curr_str = "0",
+    curr_max_str = "0",
+    curr_percent = 0,
+    curr_max_percent = 0,
 
-		capa = 0,
-		capa_max = 0,
-		capa_percent = 0,
-		capa_max_percent = 0,
-		capa_str = "0",
-		capa_max_str = "0",
+    capa = 0,
+    capa_max = 0,
+    capa_percent = 0,
+    capa_max_percent = 0,
+    capa_str = "0",
+    capa_max_str = "0",
 
-        EscT = 0,
-        EscT_max = 0,
-        EscT_str = "0",
-        EscT_max_str = "0",
-        EscT_percent = 0,
-        EscT_max_percent = 0,
+    EscT = 0,
+    EscT_max = 0,
+    EscT_str = "0",
+    EscT_max_str = "0",
+    EscT_percent = 0,
+    EscT_max_percent = 0,
 
-        img_box = nil,
-        img_last_name = "---",
-        img_craft_name_for_image = "---",
-		
-		profile_id_str = "--",
-		rate_id_str = "--",
-		
-        rqly = 0,
-        rqly_min = 0,
-        rqly_str = 0,
-        rqly_min_str = 0,
+    img_box = nil,
+    img_last_name = "---",
+    img_craft_name_for_image = "---",
 
-		fmode = 0,
-		fmode_str = "----",
-		
-        vBecMax = 8.4,
-		vBecMin = 7 ,
-        vBecUsed = 0,
-        vBecPercent = 0,
-        vBecPercent_txt = "---%%",
-		vBecColor = RED,
-		
-		vTXVolts = 0,
-		vTXVoltsMax = -1, --8.4,
-		vTXVoltsMin = -1, --6.6,
-		vTXVoltsWarn = -1, --7.0,
-		vTXVoltsPercent = 0,
-		vTXVoltsColor = RED,
-		vTXVoltsPercent_txt = "---%%",
-		
-		timeCurrent = "TheNige: --:--",
-		
-		govState = 0, 
-		govState_str = "---",
-    }
---end
+    profile_id_str = "--",
+    rate_id_str = "--",
 
+    rqly = 0,
+    rqly_min = 0,
+    rqly_str = 0,
+    rqly_min_str = 0,
+
+    fmode = 0,
+    fmode_str = "----",
+
+    vBecMax = 8.4,
+    vBecMin = 7 ,
+    vBecUsed = 0,
+    vBecPercent = 0,
+    vBecPercent_txt = "---%%",
+    vBecColor = RED,
+
+    vTXVolts = 0,
+    vTXVoltsMax = -1, --8.4,
+    vTXVoltsMin = -1, --6.6,
+    vTXVoltsWarn = -1, --7.0,
+    vTXVoltsPercent = 0,
+    vTXVoltsColor = RED,
+    vTXVoltsPercent_txt = "---%%",
+
+    timeCurrent = "TheNige: --:--",
+
+    govState = 0, 
+    govState_str = "---",
+
+    colourMAHGauge = lcd.RGB(0x62FF3F),
+    colourMAHGaugeInner = nil, --lcd.RGB(0x62FF3F),
+}
 
 local function loadFuncs()
 	if not rf2DashFuncs then
@@ -86,7 +87,6 @@ local rf2DashFuncs = loadFuncs()
 --local img_box = nil
 local err_img = bitmap.open(script_dir.."img/no_connection_wr.png")
 
---function rf2DashFuncs.calEndAngle(percent, minAngle, maxAngle)
 local function calEndAngle(percent, minAngle, maxAngle)
 	if percent == nil then return 0 end
 	local v = ((percent / 100) * (maxAngle - minAngle)) + minAngle
@@ -115,7 +115,59 @@ local function display_AmpsGauge(wgt, theBox, boxSize, gaugeColour)
     bCurr:arc({x = centre_x, y = centre_y, radius = g_rad, thickness = g_thick, startAngle = g_angle_min, endAngle = function() return calEndAngle(wgt.values.curr_percent, g_angle_min, g_angle_max) end, color = gaugeColour})
 end
 
-local function display_MAHUsedGauge(wgt, theBox, boxSize, gaugeColour)
+local function calcNumCells(theVoltage)
+
+    local topCellVoltage = 1
+
+    if wgt.options.BattType == 1 then
+        topCellVoltage = 4.3 -- lipo
+    elseif wgt.options.BattType == 2 then
+        topCellVoltage = 4.45 -- hv lipo
+    elseif wgt.options.BattType == 3 then
+        topCellVoltage = 4.30 -- lion
+    elseif wgt.options.BattType == 4 then
+        topCellVoltage = 3.5 -- life_po4
+    else
+        topCellVoltage = 4.3 -- default to lipo
+    end
+
+    for i = 1, 12 do
+        rf2DashFuncs.log("calcCellCount %s <? %s", theVoltage, topCellVoltage*i)
+        if theVoltage < topCellVoltage*i then
+            rf2DashFuncs.log("calcCellCount %s --> %s", theVoltage, i)
+            return i
+        end
+    end
+
+    rf2DashFuncs.log("no match found" .. theVoltage)
+    return 1
+end
+
+local function calcInitialBattVoltage(wgt)
+    if (wgt.colourMAHGaugeInner == nil) then
+        local colourMAHGaugeInner = nil
+
+        if rf2DashFuncs.inSimu then 
+            wgt.vbatOnConnect = 23.2 
+        end
+
+        local cellCount = calcNumCells(wgt.vbatOnConnect)
+
+        if (wgt.vbatOnConnect < (cellCount * 3.818)) then
+            colourMAHGaugeInner = lcd.RGB(0xFF0000)
+            rf2DashFuncs.log("Battery voltage less than 40%%")
+        elseif (wgt.vbatOnConnect < (cellCount * 4.021)) then
+            colourMAHGaugeInner = lcd.RGB(0xFF866A)
+            rf2DashFuncs.log("Battery voltage less than 80%%")
+        else
+            colourMAHGaugeInner = lcd.RGB(0x00FF00)
+            rf2DashFuncs.log("Battery voltage greater than 80%%")
+        end
+        wgt.colourMAHGaugeInner = colourMAHGaugeInner
+    end
+end
+
+local function display_MAHUsedGauge(wgt, theBox, boxSize, gaugeColour, gaugeColourInner)
     local g_thick = 20
     local gm_thick = 10
     local g_angle_min = 140
@@ -127,6 +179,8 @@ local function display_MAHUsedGauge(wgt, theBox, boxSize, gaugeColour)
 	
     local bCapa = theBox:box({x = boxSize.x, y = boxSize.y})
 
+    if wgt.colourMAHGaugeInner == nil then calcInitialBattVoltage(wgt) end
+
     bCapa:label({text = "MA Used",  x = 0, y = 0, font = FS.FONT_6, color = rf2DashFuncs.TextColourTitle})
     -- Capacity percentage
 	--bCapa:label({x = centre_x - g_thick, y = (boxSize.h / 2) - (2 * g_thick), text = function() return wgt.values.capa_percent.."%" end, font = FS.FONT_8, color = rf2DashFuncs.TextColourItem})
@@ -135,9 +189,13 @@ local function display_MAHUsedGauge(wgt, theBox, boxSize, gaugeColour)
 	bCapa:label({x = centre_x - g_thick-10, y = (boxSize.h / 2) - g_thick, text = function() return wgt.values.capa_str end, font = FS.FONT_8, color = rf2DashFuncs.TextColourItem})
     -- Max Capacity
 	bCapa:label({x = centre_x - g_thick-12, y = centre_y + 30, text = function() return wgt.values.capa_max_str end, font = FS.FONT_8, color = rf2DashFuncs.TextColourItem})
+    -- Background outer ring
     bCapa:arc({x = centre_x, y = centre_y, radius = g_rad, thickness = g_thick, startAngle = g_angle_min, endAngle = g_angle_max, rounded = true, color = lcd.RGB(0x222222)})
-    bCapa:arc({x = centre_x, y = centre_y, radius = gm_rad, thickness = gm_thick, startAngle = g_angle_min, endAngle = function() return calEndAngle(wgt.values.capa_max_percent, g_angle_min, g_angle_max) end, color = gaugeColour, opacity = 180})
-    --bCapa:arc({x = centre_x, y = centre_y, radius = g_rad, thickness = g_thick, startAngle = g_angle_min, endAngle = function() return calEndAngle(wgt.values.capa_percent, g_angle_min, g_angle_max) end, color = gaugeColour})
+    -- Inner ring
+    -- Change inner ring colour based on initial voltage. If it's above 80% then green, orange if > 40%, anything below 40% is red
+    bCapa:arc({x = centre_x, y = centre_y, radius = gm_rad, thickness = gm_thick, startAngle = g_angle_min, endAngle = function() return calEndAngle(wgt.values.capa_max_percent, g_angle_min, g_angle_max) end, color = gaugeColourInner, opacity = 180})
+    --bCapa:arc({x = centre_x, y = centre_y, radius = gm_rad, thickness = gm_thick, startAngle = g_angle_min, endAngle = function() return calEndAngle(wgt.values.capa_max_percent, g_angle_min, g_angle_max) end, color = gaugeColour, opacity = 180})
+    -- Used capacity ring
     bCapa:arc({x = centre_x, y = centre_y, radius = g_rad, thickness = g_thick, startAngle = g_angle_min, endAngle = function() return calEndAngle(wgt.values.capaRem_percent, g_angle_min, g_angle_max) end, color = gaugeColour})
 end
 
@@ -150,7 +208,7 @@ end
 local function display_BatteryVoltage(wgt, theBox, lx, ly)
     local bRXVolts = theBox:box({x = lx, y = ly})
     bRXVolts:label({text = "Batt Voltage", x = 0, y = 0, font = FS.FONT_6, color = rf2DashFuncs.TextColourTitle})
-    bRXVolts:label({text = function() return string.format("%.02fv", wgt.values.vbat) end , x = 0, y = 15, font = FS.FONT_12, color = GREEN})
+    bRXVolts:label({text = function() return string.format("%.02fv", wgt.values.vbat) end , x = 0, y = 15, font = FS.FONT_12, color = wgt.colourMAHGaugeInner})
 end
 
 local function display_ModelImage(wgt, theBox, lx, ly)
