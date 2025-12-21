@@ -73,7 +73,7 @@ wgt.values = {
     govState_str = "---",
 
     colourMAHGauge = lcd.RGB(0x62FF3F),
-    colourMAHGaugeInner = nil, --lcd.RGB(0x62FF3F),
+    colourMAHGaugeInner = lcd.RGB(0x000000), --lcd.RGB(0x62FF3F),
 }
 
 local function loadFuncs()
@@ -132,20 +132,20 @@ local function calcNumCells(theVoltage)
     end
 
     for i = 1, 12 do
-        rf2DashFuncs.log("calcCellCount %s <? %s", theVoltage, topCellVoltage*i)
-        if theVoltage < topCellVoltage*i then
-            rf2DashFuncs.log("calcCellCount %s --> %s", theVoltage, i)
+        rf2DashFuncs.log("calcNumCells %s | %s", theVoltage, topCellVoltage * i)
+        if theVoltage < topCellVoltage * i then
+            rf2DashFuncs.log("calcNumCells %s --> %s", theVoltage, i)
             return i
         end
     end
 
-    rf2DashFuncs.log("no match found" .. theVoltage)
+    rf2DashFuncs.log("calcNumCells: no match found: " .. theVoltage)
     return 1
 end
 
 local function calcInitialBattVoltage(wgt)
-    if (wgt.colourMAHGaugeInner == nil) then
-        local colourMAHGaugeInner = nil
+    if (wgt.colourMAHGaugeInner == nil or wgt.colourMAHGaugeInner == lcd.RGB(0x000000)) then
+        local colourMAHGaugeInner = lcd.RGB(0x000000)
 
         if rf2DashFuncs.inSimu then 
             wgt.vbatOnConnect = 23.2 
@@ -164,10 +164,11 @@ local function calcInitialBattVoltage(wgt)
             rf2DashFuncs.log("Battery voltage greater than 80%%")
         end
         wgt.colourMAHGaugeInner = colourMAHGaugeInner
+        --rf2DashFuncs.log("Battery voltage colour wgt:  " .. wgt.colourMAHGaugeInner)
     end
 end
 
-local function display_MAHUsedGauge(wgt, theBox, boxSize, gaugeColour, gaugeColourInner)
+local function display_MAHUsedGauge(wgt, theBox, boxSize, gaugeColour)
     local g_thick = 20
     local gm_thick = 10
     local g_angle_min = 140
@@ -178,8 +179,6 @@ local function display_MAHUsedGauge(wgt, theBox, boxSize, gaugeColour, gaugeColo
     local gm_rad =  g_rad - g_thick --+ (g_thick / 2)
 	
     local bCapa = theBox:box({x = boxSize.x, y = boxSize.y})
-
-    if wgt.colourMAHGaugeInner == nil then calcInitialBattVoltage(wgt) end
 
     bCapa:label({text = "MA Used",  x = 0, y = 0, font = FS.FONT_6, color = rf2DashFuncs.TextColourTitle})
     -- Capacity percentage
@@ -193,8 +192,7 @@ local function display_MAHUsedGauge(wgt, theBox, boxSize, gaugeColour, gaugeColo
     bCapa:arc({x = centre_x, y = centre_y, radius = g_rad, thickness = g_thick, startAngle = g_angle_min, endAngle = g_angle_max, rounded = true, color = lcd.RGB(0x222222)})
     -- Inner ring
     -- Change inner ring colour based on initial voltage. If it's above 80% then green, orange if > 40%, anything below 40% is red
-    bCapa:arc({x = centre_x, y = centre_y, radius = gm_rad, thickness = gm_thick, startAngle = g_angle_min, endAngle = function() return calEndAngle(wgt.values.capa_max_percent, g_angle_min, g_angle_max) end, color = gaugeColourInner, opacity = 180})
-    --bCapa:arc({x = centre_x, y = centre_y, radius = gm_rad, thickness = gm_thick, startAngle = g_angle_min, endAngle = function() return calEndAngle(wgt.values.capa_max_percent, g_angle_min, g_angle_max) end, color = gaugeColour, opacity = 180})
+    bCapa:arc({x = centre_x, y = centre_y, radius = gm_rad, thickness = gm_thick, startAngle = g_angle_min, endAngle = function() return calEndAngle(wgt.values.capa_max_percent, g_angle_min, g_angle_max) end, color = wgt.colourMAHGaugeInner, opacity = 180})
     -- Used capacity ring
     bCapa:arc({x = centre_x, y = centre_y, radius = g_rad, thickness = g_thick, startAngle = g_angle_min, endAngle = function() return calEndAngle(wgt.values.capaRem_percent, g_angle_min, g_angle_max) end, color = gaugeColour})
 end
@@ -226,6 +224,8 @@ end
 
 local function build_ui_electric(wgt)
     local dx = 20
+
+    if wgt.colourMAHGaugeInner == nil or wgt.colourMAHGaugeInner == lcd.RGB(0x000000) then calcInitialBattVoltage(wgt) end
 
     lvgl.clear()
 
