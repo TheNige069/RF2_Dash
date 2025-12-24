@@ -6,7 +6,7 @@ There are two dashboard, a Nitro specific and Electric specific each with their 
 
 These are telemetry-only dashboard that requires the Official Rotorflight lua scripts be installed and the rf2bg script configured as a background task
 
-Credit: The dashboards are based on the work originally developed by Shmuely and his RF2_toush suite.
+Credit: The dashboards are based on the work originally developed by Shmuely and his RF2_touch suite.
 
 How to use:
 - Download and install the rf2 official widget
