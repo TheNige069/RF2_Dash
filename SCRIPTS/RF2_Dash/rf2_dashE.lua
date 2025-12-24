@@ -78,7 +78,7 @@ wgt.values = {
 
 local function loadFuncs()
 	if not rf2DashFuncs then
-		rf2DashFuncs = loadScript(script_dir .. "rf2_dashFunc.lua")
+		rf2DashFuncs = assert(loadScript(script_dir .. "rf2_dashFunc.lua"))
 	end
 	return rf2DashFuncs()
 end
@@ -118,6 +118,8 @@ end
 local function calcNumCells(theVoltage)
 
     local topCellVoltage = 1
+    
+    if (theVoltage == nill or theVoltage == 0) and (wgt.vbat ~= nill or wgt.vbat > 0) then theVoltage = wgt.vbat end
 
     if wgt.options.BattType == 1 then
         topCellVoltage = 4.3 -- lipo
@@ -131,7 +133,7 @@ local function calcNumCells(theVoltage)
         topCellVoltage = 4.3 -- default to lipo
     end
 
-    for i = 1, 12 do
+    for i = 1, 14 do
         rf2DashFuncs.log("calcNumCells %s | %s", theVoltage, topCellVoltage * i)
         if theVoltage < topCellVoltage * i then
             rf2DashFuncs.log("calcNumCells %s --> %s", theVoltage, i)
@@ -143,28 +145,33 @@ local function calcNumCells(theVoltage)
     return 1
 end
 
-local function calcInitialBattVoltage(wgt)
-    if (wgt.colourMAHGaugeInner == nil or wgt.colourMAHGaugeInner == lcd.RGB(0x000000)) then
-        local colourMAHGaugeInner = lcd.RGB(0x000000)
+local function calcInitialBattVoltage()
+    if rf2DashFuncs.is_connected then
+        if (wgt.colourMAHGaugeInner == nil or wgt.colourMAHGaugeInner == lcd.RGB(0x000000)) then
+            local colourMAHGaugeInner = lcd.RGB(0x000000)
 
-        if rf2DashFuncs.inSimu then 
-            wgt.vbatOnConnect = 23.2 
+            if rf2DashFuncs.inSimu then 
+                wgt.vbatOnConnect = 23.2 
+            end
+            local cellCount = getSourceValue("Cel#") or 0
+            rf2DashFuncs.log("calcInitialBattVoltage: cellCount: %s", cellCount)
+
+            if (cellCount == 0) then cellCount = calcNumCells(wgt.vbatOnConnect) end
+            rf2DashFuncs.log("calcInitialBattVoltage: cellCount: %s", cellCount)
+
+            if (wgt.vbatOnConnect < (cellCount * 3.818)) then
+                colourMAHGaugeInner = lcd.RGB(0xFF0000)
+                rf2DashFuncs.log("Battery voltage less than 40%%")
+            elseif (wgt.vbatOnConnect < (cellCount * 4.021)) then
+                colourMAHGaugeInner = lcd.RGB(0xFF866A)
+                rf2DashFuncs.log("Battery voltage less than 80%%")
+            else
+                colourMAHGaugeInner = lcd.RGB(0x00FF00)
+                rf2DashFuncs.log("Battery voltage greater than 80%%")
+            end
+            wgt.colourMAHGaugeInner = colourMAHGaugeInner
+            --rf2DashFuncs.log("Battery voltage colour wgt:  " .. wgt.colourMAHGaugeInner)
         end
-
-        local cellCount = calcNumCells(wgt.vbatOnConnect)
-
-        if (wgt.vbatOnConnect < (cellCount * 3.818)) then
-            colourMAHGaugeInner = lcd.RGB(0xFF0000)
-            rf2DashFuncs.log("Battery voltage less than 40%%")
-        elseif (wgt.vbatOnConnect < (cellCount * 4.021)) then
-            colourMAHGaugeInner = lcd.RGB(0xFF866A)
-            rf2DashFuncs.log("Battery voltage less than 80%%")
-        else
-            colourMAHGaugeInner = lcd.RGB(0x00FF00)
-            rf2DashFuncs.log("Battery voltage greater than 80%%")
-        end
-        wgt.colourMAHGaugeInner = colourMAHGaugeInner
-        --rf2DashFuncs.log("Battery voltage colour wgt:  " .. wgt.colourMAHGaugeInner)
     end
 end
 
@@ -268,7 +275,7 @@ local function readoutBatteryPercentage(wgt)
 		if (announcedBatPercent == false) then 
 			playNumber(wgt.values.capaRem_percent,13,0)
 		end
-		announcedBatPercent = true
+		announcedBatPercent.+ = true
 	else
 		announcedBatPercent = false
 	end

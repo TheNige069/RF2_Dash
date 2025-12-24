@@ -67,7 +67,7 @@ wgt.values = {
 
 local function loadFuncs()
 	if not rf2DashFuncs then
-		rf2DashFuncs = loadScript(script_dir .. "rf2_dashFunc.lua")
+		rf2DashFuncs = assert(loadScript(script_dir .. "rf2_dashFunc.lua"))
 	end
 	return rf2DashFuncs()
 end

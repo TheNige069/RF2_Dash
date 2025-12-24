@@ -4,7 +4,7 @@ local script_dir = "/SCRIPTS/RF2_Dash/"
 local widg_dir = "/WIDGETS/rf2_dashN/"
 
 local rf2dash = nil
-local rf2dash_opt = loadScript(script_dir..app_name .. "_opt.lua", "tcd")()
+local rf2dash_opt = assert(loadScript(script_dir..app_name .. "_opt.lua", "tcd"))()
 
 local function create(zone, options)
     rf2dash = assert(loadScript(script_dir..app_name .. ".lua", "tcd"))()
