@@ -275,7 +275,7 @@ local function readoutBatteryPercentage(wgt)
 		if (announcedBatPercent == false) then 
 			playNumber(wgt.values.capaRem_percent,13,0)
 		end
-		announcedBatPercent.+ = true
+		announcedBatPercent = true
 	else
 		announcedBatPercent = false
 	end
