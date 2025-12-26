@@ -39,6 +39,7 @@ The following Telemetry options need to be enabled for the Dashboards to work pr
   - Battery Voltage
   - Battery Current
   - Battery Consumption
+  - Battery Cell Count
 - Voltage
   - ESC Voltage
   - BEC Voltage
