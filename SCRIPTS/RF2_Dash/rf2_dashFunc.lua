@@ -460,21 +460,6 @@ function rf2DashFuncs.updateESCTemperature(wgt)
     wgt.values.EscT_max_percent = math.min(100, math.floor(100 * (wgt.values.EscT_max / tempTop)))
 end
 
-function rf2DashFuncs.updateCell(wgt)
-    local vbat = getSourceValue("Vbat") or 0.0
-
-    if (wgt.vbatOnConnect == nil) then wgt.vbatOnConnect = vbat end
-    if rf2DashFuncs.inSimu then wgt.vbatOnConnect = 22.2 end
-
-    --if vbat == nil then vbat = 0 end
-
-    if rf2DashFuncs.inSimu then
-        vbat = 22.2
-    end
-
-    wgt.values.vbat = vbat
-end
-
 -- Transmitter battery voltage
 function rf2DashFuncs.updateTXBatVoltage(wgt)
 	--wgt.values.vTXVolts = getValue(267)	-- This is the "Batt" sensor

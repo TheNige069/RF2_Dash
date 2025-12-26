@@ -151,7 +151,7 @@ end
 
 local function calcInitialBattVoltage()
     if wgt.is_connected then
-        if (wgt.values.colourMAHGaugeInner == nil or wgt.values.colourMAHGaugeInner == WHITE) then
+        if ((wgt.values.colourMAHGaugeInner == nil or wgt.values.colourMAHGaugeInner == WHITE) and wgt.values.vbatOnConnect ~= nil) then
             local colourMAHGaugeInner = lcd.RGB(0x000000)
 
             if rf2DashFuncs.inSimu then 
@@ -175,6 +175,7 @@ local function calcInitialBattVoltage()
             end
             wgt.values.colourMAHGaugeInner = colourMAHGaugeInner
             --rf2DashFuncs.log("Battery voltage colour wgt:  " .. wgt.colourMAHGaugeInner)
+            wgt.values.needToRebuildUI = true
         end
     end
 end
@@ -285,6 +286,21 @@ local function readoutBatteryPercentage(wgt)
 	end
 end
 
+function updateCell(wgt)
+    local vbat = getSourceValue("Vbat") or 0.0
+
+    if (wgt.values.vbatOnConnect == nil) then wgt.values.vbatOnConnect = vbat end
+    if rf2DashFuncs.inSimu then wgt.values.vbatOnConnect = 22.29 end
+
+    --if vbat == nil then vbat = 0 end
+
+    if rf2DashFuncs.inSimu then
+        vbat = 22.2
+    end
+
+    wgt.values.vbat = vbat
+end
+
 local function updateMAUsed(wgt)
     local capa_top = wgt.options.capacityTop
     local capa = getSourceValue("Capa")
@@ -372,7 +388,7 @@ local function refreshUI(wgt)
     updateImage(wgt)
     rf2DashFuncs.updateTimeCount(wgt)
     rf2DashFuncs.updateRpm(wgt)
-    rf2DashFuncs.updateCell(wgt)
+    updateCell(wgt)
     updateCurr(wgt)
 	updateMAUsed(wgt)
 	rf2DashFuncs.updateGovState(wgt)
