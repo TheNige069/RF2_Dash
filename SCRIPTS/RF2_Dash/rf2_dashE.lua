@@ -4,6 +4,8 @@ local baseDir = "/WIDGETS/rf2_dashE/"
 
 local wgt = {}
 
+local WHITE = lcd.RGB(255, 255, 255)
+
 wgt.values = {
     craft_name = "Not connected",
     timer_str = "--:--",
@@ -73,7 +75,9 @@ wgt.values = {
     govState_str = "---",
 
     colourMAHGauge = lcd.RGB(0x62FF3F),
-    colourMAHGaugeInner = lcd.RGB(0x000000), --lcd.RGB(0x62FF3F),
+    colourMAHGaugeInner = WHITE, --lcd.RGB(0x62FF3F),
+    
+    needToRebuildUI = true
 }
 
 local function loadFuncs()
@@ -119,7 +123,7 @@ local function calcNumCells(theVoltage)
 
     local topCellVoltage = 1
     
-    if (theVoltage == nill or theVoltage == 0) and (wgt.vbat ~= nill or wgt.vbat > 0) then theVoltage = wgt.vbat end
+    if (theVoltage == nil or theVoltage == 0) and (wgt.values.vbat ~= nil or wgt.values.vbat > 0) then theVoltage = wgt.values.vbat end
 
     if wgt.options.BattType == 1 then
         topCellVoltage = 4.3 -- lipo
@@ -146,30 +150,30 @@ local function calcNumCells(theVoltage)
 end
 
 local function calcInitialBattVoltage()
-    if rf2DashFuncs.is_connected then
-        if (wgt.colourMAHGaugeInner == nil or wgt.colourMAHGaugeInner == lcd.RGB(0x000000)) then
+    if wgt.is_connected then
+        if (wgt.values.colourMAHGaugeInner == nil or wgt.values.colourMAHGaugeInner == WHITE) then
             local colourMAHGaugeInner = lcd.RGB(0x000000)
 
             if rf2DashFuncs.inSimu then 
-                wgt.vbatOnConnect = 23.2 
+                wgt.values.vbatOnConnect = 23.2 
             end
             local cellCount = getSourceValue("Cel#") or 0
             rf2DashFuncs.log("calcInitialBattVoltage: cellCount: %s", cellCount)
 
-            if (cellCount == 0) then cellCount = calcNumCells(wgt.vbatOnConnect) end
+            if (cellCount == 0) then cellCount = calcNumCells(wgt.values.vbatOnConnect) end
             rf2DashFuncs.log("calcInitialBattVoltage: cellCount: %s", cellCount)
 
-            if (wgt.vbatOnConnect < (cellCount * 3.818)) then
-                colourMAHGaugeInner = lcd.RGB(0xFF0000)
+            if (wgt.values.vbatOnConnect < (cellCount * 3.818)) then
+                colourMAHGaugeInner = lcd.RGB(255, 0, 0)    -- 0xFF0000
                 rf2DashFuncs.log("Battery voltage less than 40%%")
-            elseif (wgt.vbatOnConnect < (cellCount * 4.021)) then
-                colourMAHGaugeInner = lcd.RGB(0xFF866A)
+            elseif (wgt.values.vbatOnConnect < (cellCount * 4.021)) then
+                colourMAHGaugeInner = lcd.RGB(255, 136, 104) -- 0xFF866A
                 rf2DashFuncs.log("Battery voltage less than 80%%")
             else
-                colourMAHGaugeInner = lcd.RGB(0x00FF00)
+                colourMAHGaugeInner = lcd.RGB(0, 255, 0) -- 0x00FF00
                 rf2DashFuncs.log("Battery voltage greater than 80%%")
             end
-            wgt.colourMAHGaugeInner = colourMAHGaugeInner
+            wgt.values.colourMAHGaugeInner = colourMAHGaugeInner
             --rf2DashFuncs.log("Battery voltage colour wgt:  " .. wgt.colourMAHGaugeInner)
         end
     end
@@ -199,7 +203,7 @@ local function display_MAHUsedGauge(wgt, theBox, boxSize, gaugeColour)
     bCapa:arc({x = centre_x, y = centre_y, radius = g_rad, thickness = g_thick, startAngle = g_angle_min, endAngle = g_angle_max, rounded = true, color = lcd.RGB(0x222222)})
     -- Inner ring
     -- Change inner ring colour based on initial voltage. If it's above 80% then green, orange if > 40%, anything below 40% is red
-    bCapa:arc({x = centre_x, y = centre_y, radius = gm_rad, thickness = gm_thick, startAngle = g_angle_min, endAngle = function() return calEndAngle(wgt.values.capa_max_percent, g_angle_min, g_angle_max) end, color = wgt.colourMAHGaugeInner, opacity = 180})
+    bCapa:arc({x = centre_x, y = centre_y, radius = gm_rad, thickness = gm_thick, startAngle = g_angle_min, endAngle = function() return calEndAngle(wgt.values.capa_max_percent, g_angle_min, g_angle_max) end, color = wgt.values.colourMAHGaugeInner, opacity = 180})
     -- Used capacity ring
     bCapa:arc({x = centre_x, y = centre_y, radius = g_rad, thickness = g_thick, startAngle = g_angle_min, endAngle = function() return calEndAngle(wgt.values.capaRem_percent, g_angle_min, g_angle_max) end, color = gaugeColour})
 end
@@ -213,7 +217,7 @@ end
 local function display_BatteryVoltage(wgt, theBox, lx, ly)
     local bRXVolts = theBox:box({x = lx, y = ly})
     bRXVolts:label({text = "Batt Voltage", x = 0, y = 0, font = FS.FONT_6, color = rf2DashFuncs.TextColourTitle})
-    bRXVolts:label({text = function() return string.format("%.02fv", wgt.values.vbat) end , x = 0, y = 15, font = FS.FONT_12, color = wgt.colourMAHGaugeInner})
+    bRXVolts:label({text = function() return string.format("%.02fv", wgt.values.vbat) end , x = 0, y = 15, font = FS.FONT_12, color = wgt.values.colourMAHGaugeInner})
 end
 
 local function display_ModelImage(wgt, theBox, lx, ly)
@@ -232,7 +236,7 @@ end
 local function build_ui_electric(wgt)
     local dx = 20
 
-    if wgt.colourMAHGaugeInner == nil or wgt.colourMAHGaugeInner == lcd.RGB(0x000000) then calcInitialBattVoltage(wgt) end
+    if wgt.values.colourMAHGaugeInner == nil or wgt.values.colourMAHGaugeInner == WHITE then calcInitialBattVoltage(wgt) end
 
     lvgl.clear()
 
@@ -390,9 +394,8 @@ local function update(wgt, options)
     wgt.not_connected_error = "Not connected"
 
     --resetWidgetValues(wgt)
-	
     build_ui_electric(wgt)
-	
+
     return wgt
 end
 
@@ -412,10 +415,18 @@ local function refresh(wgt, event, touchState)
     -- wgt.not_connected_error = "Not connected"
 
     if wgt.is_connected == false then
+        wgt.values.needToRebuildUI = true
         --resetWidgetValues(wgt)
 		-- Refresh items that don't rely on being connected
 		refreshUINoConn(wgt)
         return
+    else
+	    --rf2DashFuncs.log("refresh - Connected")
+        calcInitialBattVoltage(wgt) 
+        if (wgt.values.needToRebuildUI == true) then
+            build_ui_electric(wgt)
+            wgt.values.needToRebuildUI = false
+        end
     end
 	
     refreshUI(wgt)
