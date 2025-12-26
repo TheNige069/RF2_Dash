@@ -273,7 +273,7 @@ local function readoutBatteryPercentage(wgt)
 
 	if (math.fmod(wgt.values.capaRem_percent, wgt.options.BatteryCallout) == 0)  then
 		if (announcedBatPercent == false) then 
-			playNumber(wgt.values.capaRem_percent,13,0)
+			playNumber(wgt.values.capaRem_percent, 13, 0)
 		end
 		announcedBatPercent = true
 	else
@@ -289,13 +289,7 @@ local function updateMAUsed(wgt)
     local capa_max = wgt.options.BattCapa --getValue("Capa+")
 	capa_max = math.max(capa_max, capa)
 
-    if rf2DashFuncs.inSimu then
-        --capa = 0
-        --capa_max = 5000
-    end
-
     --BattCapMin %
-    -- Todo: Need to fix roll-around on gauge here and in display_MAHUsedGauge
     local battCapCanUse = ((100 - wgt.options.BattCapMin) / 100) * capa_max
 
     wgt.values.capa = capa
@@ -303,6 +297,8 @@ local function updateMAUsed(wgt)
     --wgt.values.capaRem_percent = math.min(100, math.floor(100 * (wgt.values.capaRem / capa_max)))
     wgt.values.capaRem = battCapCanUse - capa
     wgt.values.capaRem_percent = math.min(100, math.floor(100 * (wgt.values.capaRem / battCapCanUse)))
+    if (wgt.values.capaRem_percent < 0) then wgt.values.capaRem_percent = 0 end
+
     wgt.values.capa_max = capa_max
     wgt.values.capa_percent = math.min(100, math.floor(100 * (capa / capa_max)))
     wgt.values.capa_max_percent = math.min(100, math.floor(100 * (capa_max / capa_max)))
