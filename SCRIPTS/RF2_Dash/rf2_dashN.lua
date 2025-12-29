@@ -11,24 +11,6 @@ wgt.values = {
     rpm = 0,
     rpm_str = "0",
 
-    --vbat = 0,
-    --vcel = 0,
-    --cell_percent = 0,
-    --volt = 0,
-    --curr = 0,
-    --curr_max = 0,
-    --curr_str = "0",
-    --curr_max_str = "0",
-    --curr_percent = 0,
-    --curr_max_percent = 0,
-
-    --EscT = 0,
-    --EscT_max = 0,
-    --EscT_str = "0",
-    --EscT_max_str = "0",
-    --EscT_percent = 0,
-    --EscT_max_percent = 0,
-
     img_box = nil,
     img_last_name = "---",
     img_craft_name_for_image = "---",
@@ -63,6 +45,8 @@ wgt.values = {
 
     govState = 0, 
     govState_str = "---",
+
+    needToRebuildUI = true
 }
 
 local function loadFuncs()
@@ -73,21 +57,7 @@ local function loadFuncs()
 end
 local rf2DashFuncs = loadFuncs()
 
---local img_box = nil
-local err_img = bitmap.open(script_dir.."img/no_connection_wr.png")
-
-local function display_ModelImage(wgt, theBox, lx, ly)
-    -- Model image
-    local bImageArea = theBox:box({x = lx, y = ly})
-    bImageArea:rectangle({x = 0, y = 0, w = rf2DashFuncs.isizew, h = rf2DashFuncs.isizeh, thickness = 4, rounded = 15, filled = false, color = GREY})
-    local bImg = bImageArea:box({})
-    wgt.values.img_box = bImg
-
-    -- Craft name
-    local bCraftName = theBox:box({x = lx, y = ly + 75})
-    bCraftName:rectangle({x = 10, y = 20, w = rf2DashFuncs.isizew - 20, h = 20, filled = true, rounded = 8, color = DARKGREY, opacity = 200})
-    bCraftName:label({text = function() return wgt.values.craft_name end,  x = 15, y = 20, font = FS.FONT_8, color = rf2DashFuncs.TextColourItem})
-end
+local err_img = bitmap.open(script_dir .. "img/no_connection_wr.png")
 
 local function display_FlightMode(theBox, lx, ly)
     theBox:build({{type = "box", x = lx, y = ly,
@@ -111,7 +81,7 @@ local function build_ui_nitro(wgt)
 	rf2DashFuncs.displayRatePIDprofile(wgt, pMain, 44, 0)
 	rf2DashFuncs.display_timer(wgt, pMain, 135, 50)
 	rf2DashFuncs.display_RPM(wgt, pMain, 140, 115, FS.FONT_38)
-	display_ModelImage(wgt, pMain, 325, 5)
+	rf2DashFuncs.display_ModelImage(wgt, pMain, 325, 5)
     rf2DashFuncs.display_NoConnection(wgt, 325, 10)
 	rf2DashFuncs.display_FailToArmFlags(wgt, pMain, 100, 25)
 	rf2DashFuncs.display_statusbar(wgt, 0, wgt.zone.h - 20, 0)
@@ -119,19 +89,11 @@ local function build_ui_nitro(wgt)
 	display_FlightMode(pMain, 150, 195)
 	rf2DashFuncs.display_ArmState(wgt, pMain, 140, 5)
 	rf2DashFuncs.display_GovernorState(wgt, pMain, 325, 130)
-
-    --pMain:build({{type = "box", x = 325, y = 175,
-    --    children = {
-	--		{type = "label", text = function() return string.format("Max: %s", wgt.values.vTXVoltsMax) end, x = 0, y = 0, font = FS.FONT_6, color = rf2DashFuncs.TextColourTitle},
-	--		{type = "label", text = function() return string.format("Min: %s", wgt.values.vTXVoltsMin) end, x = 0, y = 20, font = FS.FONT_6, color = rf2DashFuncs.TextColourTitle},
-	--		{type = "label", text = function() return string.format("Warn: %s", wgt.values.vTXVoltsWarn) end, x = 0, y = 40, font = FS.FONT_6, color = rf2DashFuncs.TextColourTitle},
-    --    }
-    --}})
 end
 
 local function updateImage(wgt)
     local newCraftName = wgt.values.craft_name
-	
+
     if newCraftName == wgt.values.img_craft_name_for_image then
         return
     end
@@ -147,9 +109,6 @@ local function updateImage(wgt)
     end
 
     if imageName ~= wgt.values.img_last_name then
-        wgt.values.img_box:clear()
-		wgt.values.img_box:image({file = imageName, x = 0, y = 0, w = rf2DashFuncs.isizew, h = rf2DashFuncs.isizeh, fill = false})
-
         wgt.values.img_last_name = imageName
         wgt.values.img_craft_name_for_image = newCraftName
     end
@@ -165,7 +124,6 @@ local function refreshUI(wgt)
     updateImage(wgt)
     rf2DashFuncs.updateTimeCount(wgt)
     rf2DashFuncs.updateRpm(wgt)
-    --rf2DashFuncs.updateCell(wgt)
 	rf2DashFuncs.updateGovState(wgt)
     rf2DashFuncs.updateProfiles(wgt)
 	rf2DashFuncs.updateFlightMode(wgt)
@@ -176,24 +134,20 @@ local function refreshUI(wgt)
 	refreshUINoConn(wgt)
 end
 
----------------------------------------------------------------------------------------
-
 local function update(wgt, options)
     if (wgt == nil) then return end
     wgt.options = options
     wgt.not_connected_error = "Not connected"
 
-    --resetWidgetValues(wgt)
-
     if wgt.options.rxbatNum == nil or wgt.options.rxbatNum == nan or wgt.options.rxbatNum < 0 then
 		wgt.options.rxbatNum = 2
 	end
-	
+
 	if wgt.options.rxbatNum > 0 then
 		wgt.values.vBecMax = wgt.options.rxbatNum * 4.2
 		wgt.values.vBecMin = wgt.options.rxbatNum * 3.5
 	end
-	
+
 	build_ui_nitro(wgt)
 
     return wgt
@@ -212,15 +166,19 @@ local function refresh(wgt, event, touchState)
     if (wgt == nil) then return end
 
     wgt.is_connected = (getRSSI() > 0)
-    -- wgt.not_connected_error = "Not connected"
 
     if wgt.is_connected == false then
-        --resetWidgetValues(wgt)
 		-- Refresh items that don't rely on being connected
 		refreshUINoConn(wgt)
         return
+    else
+	    --rf2DashFuncs.log("refresh - Connected")
+        if (wgt.values.needToRebuildUI == true) then
+            build_ui_nitro(wgt)
+            wgt.values.needToRebuildUI = false
+        end
     end
-	
+
     refreshUI(wgt)
 end
 

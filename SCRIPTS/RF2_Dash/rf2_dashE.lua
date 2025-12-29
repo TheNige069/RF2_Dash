@@ -76,7 +76,7 @@ wgt.values = {
 
     colourMAHGauge = lcd.RGB(0x62FF3F),
     colourMAHGaugeInner = WHITE, --lcd.RGB(0x62FF3F),
-    
+
     needToRebuildUI = true
 }
 
@@ -88,7 +88,6 @@ local function loadFuncs()
 end
 local rf2DashFuncs = loadFuncs()
 
---local img_box = nil
 local err_img = bitmap.open(script_dir.."img/no_connection_wr.png")
 
 local function calEndAngle(percent, minAngle, maxAngle)
@@ -122,7 +121,7 @@ end
 local function calcNumCells(theVoltage)
 
     local topCellVoltage = 1
-    
+
     if (theVoltage == nil or theVoltage == 0) and (wgt.values.vbat ~= nil or wgt.values.vbat > 0) then theVoltage = wgt.values.vbat end
 
     if wgt.options.BattType == 1 then
@@ -189,7 +188,7 @@ local function display_MAHUsedGauge(wgt, theBox, boxSize, gaugeColour)
     local centre_y = (boxSize.h / 2) - gm_thick --+ boxSize.y
     local g_rad = math.min((boxSize.w / 2), (boxSize.h / 2)) - g_thick - 2
     local gm_rad =  g_rad - g_thick --+ (g_thick / 2)
-	
+
     local bCapa = theBox:box({x = boxSize.x, y = boxSize.y})
 
     bCapa:label({text = "MA Used",  x = 0, y = 0, font = FS.FONT_6, color = rf2DashFuncs.TextColourTitle})
@@ -221,19 +220,6 @@ local function display_BatteryVoltage(wgt, theBox, lx, ly)
     bRXVolts:label({text = function() return string.format("%.02fv", wgt.values.vbat) end , x = 0, y = 15, font = FS.FONT_12, color = wgt.values.colourMAHGaugeInner})
 end
 
-local function display_ModelImage(wgt, theBox, lx, ly)
-    -- Model image
-    local bImageArea = theBox:box({x = lx, y = ly})
-    bImageArea:rectangle({x = 0, y = 0, w = rf2DashFuncs.isizew, h = rf2DashFuncs.isizeh, thickness = 4, rounded = 15, filled = false, color = GREY})
-    local bImg = bImageArea:box({})
-    wgt.values.img_box = bImg
-
-    -- Craft name
-    local bCraftName = theBox:box({x = lx, y = ly + 75})
-    bCraftName:rectangle({x = 10, y = 20, w = rf2DashFuncs.isizew - 20, h = 20, filled = true, rounded = 8, color = DARKGREY, opacity = 200})
-    bCraftName:label({text = function() return wgt.values.craft_name end,  x = 15, y = 20, font = FS.FONT_8, color = rf2DashFuncs.TextColourItem})
-end
-
 local function build_ui_electric(wgt)
     local dx = 20
 
@@ -245,29 +231,21 @@ local function build_ui_electric(wgt)
     lvgl.rectangle({x = 0, y = 0, w = LCD_W, h = LCD_H, color = lcd.RGB(0x111111), filled = true})
     local pMain = lvgl.box({x = 0, y = 0})
 
-	-- Model image
-	display_ModelImage(wgt, pMain, 325, 5)
-    --local bImageArea = pMain:box({x = 325, y = 5})
-	--wgt.values.img_box = bImageArea:rectangle({x = 0, y = 0, w = rf2DashFuncs.isizew, h = rf2DashFuncs.isizeh, thickness = 4, rounded = 15, filled = false, color = GREY})
-	
-    -- Craft name
-    --local bCraftName = pMain:box({x = 325, y = 80})
-    --bCraftName:rectangle({x = 10, y = 20, w = rf2DashFuncs.isizew - 20, h = 20, filled = true, rounded = 8, color = DARKGREY, opacity = 200})
-    --bCraftName:label({text = function() return wgt.values.craft_name end,  x = 15, y = 20, font = FS.FONT_8, color = rf2DashFuncs.TextColourItem})
-
-    rf2DashFuncs.display_NoConnection(wgt, 325, 10)
-	display_AmpsGauge(wgt, pMain, {x = 0, y = 0, h = 180, w = 180}, lcd.RGB(0xFF623F))
-	display_MAHUsedGauge(wgt, pMain, {x = 170, y = 0, h = 180, w = 180}, lcd.RGB(0x62FF3F))
-	rf2DashFuncs.display_RPM(wgt, pMain, 1, 140, FS.FONT_16)
-	displayESCTemperature(wgt, pMain, 110, 140)
-	display_BatteryVoltage(wgt, pMain, 200, 140)
-	rf2DashFuncs.display_GovernorState(wgt, pMain, 325, 130)
-	rf2DashFuncs.display_ArmState(wgt, pMain, 160, 200)
-	rf2DashFuncs.display_RXVoltage(wgt, pMain, 0, 205, false)
 	rf2DashFuncs.displayRatePIDprofile(wgt, pMain, 90, 205)
 	rf2DashFuncs.display_timer(wgt, pMain, 290, 190)
-	rf2DashFuncs.display_statusbar(wgt, 0, wgt.zone.h - 20, 0)
+	rf2DashFuncs.display_RPM(wgt, pMain, 1, 140, FS.FONT_16)
+	rf2DashFuncs.display_ModelImage(wgt, pMain, 325, 5)
+    rf2DashFuncs.display_NoConnection(wgt, 325, 10)
 	rf2DashFuncs.display_FailToArmFlags(wgt, pMain, 100, 25)
+	rf2DashFuncs.display_statusbar(wgt, 0, wgt.zone.h - 20, 0)
+	rf2DashFuncs.display_RXVoltage(wgt, pMain, 0, 205, false)
+
+	rf2DashFuncs.display_ArmState(wgt, pMain, 160, 200)
+	rf2DashFuncs.display_GovernorState(wgt, pMain, 325, 130)
+    display_AmpsGauge(wgt, pMain, {x = 0, y = 0, h = 180, w = 180}, lcd.RGB(0xFF623F))
+	display_MAHUsedGauge(wgt, pMain, {x = 170, y = 0, h = 180, w = 180}, lcd.RGB(0x62FF3F))
+	displayESCTemperature(wgt, pMain, 110, 140)
+	display_BatteryVoltage(wgt, pMain, 200, 140)
 end
 
 -- If capa_percent is divisible by BatteryCallout then let them know
@@ -343,7 +321,7 @@ local function updateCurr(wgt)
         curr = 205
         curr_max = 255
     end
-	
+
     wgt.values.curr = curr
     wgt.values.curr_max = curr_max
     wgt.values.curr_percent = math.min(100, math.floor(100 * (curr / curr_top)))
@@ -354,7 +332,7 @@ end
 
 local function updateImage(wgt)
     local newCraftName = wgt.values.craft_name
-	
+
     if newCraftName == wgt.values.img_craft_name_for_image then
         return
     end
@@ -370,9 +348,6 @@ local function updateImage(wgt)
     end
 
     if imageName ~= wgt.values.img_last_name then
-        wgt.values.img_box:clear()
-		wgt.values.img_box:image({file = imageName, x = 0, y = 0, w = rf2DashFuncs.isizew, h = rf2DashFuncs.isizeh, fill = false})
-
         wgt.values.img_last_name = imageName
         wgt.values.img_craft_name_for_image = newCraftName
     end
@@ -440,11 +415,13 @@ local function refresh(wgt, event, touchState)
 	    --rf2DashFuncs.log("refresh - Connected")
         calcInitialBattVoltage(wgt) 
         if (wgt.values.needToRebuildUI == true) then
+	        rf2DashFuncs.log("refresh - rebuild == true")
             build_ui_electric(wgt)
             wgt.values.needToRebuildUI = false
+	        rf2DashFuncs.log("refresh - rebuild == %s", wgt.values.needToRebuildUI)
         end
     end
-	
+
     refreshUI(wgt)
 end
 

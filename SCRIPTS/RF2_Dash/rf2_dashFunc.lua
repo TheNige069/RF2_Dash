@@ -49,13 +49,29 @@ local function formatTime(t1, useDays)
     return time_str, isNegative
 end
 
+function rf2DashFuncs.display_ModelImage(wgt, theBox, lx, ly)
+    -- Craft name
+    local bCraftName = theBox:box({x = lx, y = ly + 75})
+    bCraftName:rectangle({x = 10, y = 20, w = rf2DashFuncs.isizew - 20, h = 20, filled = true, rounded = 8, color = DARKGREY, opacity = 200})
+    bCraftName:label({text = function() return wgt.values.craft_name end,  x = 15, y = 20, font = FS.FONT_8, color = rf2DashFuncs.TextColourItem})
+
+    -- Model image
+    local bImageArea = theBox:box({x = lx, y = ly})
+    bImageArea:rectangle({x = 0, y = 0, w = rf2DashFuncs.isizew, h = rf2DashFuncs.isizeh, thickness = 4, rounded = 15, filled = false, color = GREY})
+    bImageArea:image({x=0, y=0, w=rf2DashFuncs.isizew, h=rf2DashFuncs.isizeh, fill=false,
+        file=function()
+            return wgt.values.img_last_name
+        end
+    })
+end
+
 -- RX battery or BEC voltage
 function rf2DashFuncs.updateVbec(wgt)
     local vBecUsed = getSourceValue("Vbec")
 	if vBecUsed ~= nil then
 		wgt.values.vBecUsed = vBecUsed
 	end
-	
+
     if rf2DashFuncs.inSimu then
 		wgt.values.vBecUsed = getSourceValue("RxBt")
 	end
@@ -66,15 +82,15 @@ function rf2DashFuncs.updateVbec(wgt)
 	if wgt.values.vBecMin < 1 then
 		wgt.values.vBecMin = 7.4
 	end
-	
+
     if wgt.values.vBecUsed == nil or wgt.values.vBecUsed == nan or wgt.values.vBecUsed < 0 then
         wgt.values.vBecUsed = 8.4
     end
-	
+
     wgt.values.vBecPercent = math.floor(100 - (100 * (wgt.values.vBecMax - wgt.values.vBecUsed) // (wgt.values.vBecMax - wgt.values.vBecMin)))
-	
+
 	if wgt.values.vBecPercent > 100 then wgt.values.vBecPercent = 100 end
-	
+
     local p = wgt.values.vBecPercent
     if (p < 10) then
         wgt.values.vBecColor = RED
@@ -93,8 +109,8 @@ end
 -- This is the local time as set in the transmitter, not the time from any of the timers
 function rf2DashFuncs.updateCurrentTime(wgt)
 	local theDateTime = getDateTime()
-	
-	wgt.values.timeCurrent = string.format("%02d:%02d TheNige069", theDateTime.hour, theDateTime.min)
+
+	wgt.values.timeCurrent = string.format("%02d:%02d TheNige", theDateTime.hour, theDateTime.min)
 end
 
 function rf2DashFuncs.updateCraftName(wgt)
@@ -105,16 +121,16 @@ function rf2DashFuncs.updateTimeCount(wgt)
 	if wgt.options.FlightTimer < 0 then 
 		wgt.options.FlightTimer = 1
 	end
-	
+
 	local timerNumber = wgt.options.FlightTimer - 1
 
 	if timerNumber < 0 then 
 		return
 	end
-	
+
     local t1 = model.getTimer(timerNumber)
     local time_str, isNegative = formatTime(t1, wgt.options.use_days)
-	
+
     wgt.values.timer_str = time_str
     wgt.values.timerIsNeg = isNegative
 end
@@ -123,7 +139,7 @@ end
 function rf2DashFuncs.updateProfiles(wgt)
     local profile_id = getSourceValue("PID#")
 	if profile_id == nil then profile_id = 0 end
-	
+
     if profile_id > 0 then
         wgt.values.profile_id = profile_id
     else
@@ -185,7 +201,7 @@ local function armingDisableFlagsList(flags)
             if i == 21 then table.insert(result, "Reboot Required") end
             if i == 22 then table.insert(result, "DSHOT Bitbang") end
             if i == 23 then table.insert(result, "Accelerometer calibration required") end
-			
+
             if i == 24 then table.insert(result, "ESC/Motor Protocol not configured") end
             if i == 25 then table.insert(result, "Arm Switch") end
         end
@@ -199,7 +215,7 @@ function rf2DashFuncs.updateArm(wgt)
     if flags == nil then flags = 0 end
 
     local flagList = armingDisableFlagsList(flags)
-	
+
     wgt.values.arm_disable_flags_list = flagList
     wgt.values.arm_disable_flags_txt = ""
     wgt.values.arm_fail = false
@@ -240,9 +256,9 @@ end
 function rf2DashFuncs.updateRpm(wgt)
     local Hspd = getSourceValue("Hspd")
 	if Hspd == nil then Hspd = 0 end
-	
+
     if rf2DashFuncs.inSimu then Hspd = 1800 end
-	
+
     wgt.values.rpm = Hspd
     wgt.values.rpm_str = string.format("%s",Hspd)
 end
@@ -255,11 +271,11 @@ end
 function rf2DashFuncs.updateGovState(wgt)
     local govState = getSourceValue("Gov")
     if govState == nil then govState = 0 end
-    
+
 	local govStateTxt = ""
 
     if rf2DashFuncs.inSimu then govState = 8 end
-	
+
 	if  govState == 0 then
 		govStateTxt = "Throttle off"	-- GOV_STATE_THROTTLE_OFF
 	elseif govState == 1 then
@@ -281,7 +297,7 @@ function rf2DashFuncs.updateGovState(wgt)
 	else --if govState == 9
     	govStateTxt = "Gov. Disabled"	-- GOV_STATE_DISABLED
 	end
-	
+
     wgt.values.govState = govState
     wgt.values.govState_str = govStateTxt
 end
@@ -300,11 +316,9 @@ function rf2DashFuncs.displayRatePIDprofile(wgt, theBox, lx, ly)
     --if (lvgl == nil) then log("refresh(nil)") return end
     --local pMain = lvgl.box({x=0, y=0})
 
-    profileID = wgt.values.profile_id_str
-    rateID = wgt.values.rate_id_str
     if rf2DashFuncs.inSimu then
-        wgt.values.profile_id_str = 3 
-        wgt.values.rate_id_str = 4 
+        wgt.values.profile_id_str = 3
+        wgt.values.rate_id_str = 4
     end
 
     -- pid profile (bank)
@@ -347,7 +361,7 @@ function rf2DashFuncs.updateELRS(wgt)
 	if rqly_min == nil then
 		rqly_min = 0
 	end
-	
+
     if rqly_min > 0 then
         wgt.values.rqly_min = rqly_min
     end
@@ -355,11 +369,10 @@ function rf2DashFuncs.updateELRS(wgt)
     wgt.values.rqly_min_str = string.format("%d%%", wgt.values.rqly_min)
 end
 
-
 function rf2DashFuncs.display_statusbar(wgt, lx, ly, txBatBar)
 	if (lvgl == nil) then log("refresh(nil)") return end
     local bStatusBar = lvgl.box({x = lx, y = ly})
-	
+
     local statusBarColor = lcd.RGB(0x0078D4)
     bStatusBar:rectangle({x = 0, y = 0, w = wgt.zone.w, h = 20, color = statusBarColor, filled = true})
 	bStatusBar:rectangle({x = 25, y = 0, w = 70, h = 20, color = RED, filled = true, visible = function() return (wgt.values.rqly_min < 80) end })
@@ -447,12 +460,12 @@ function rf2DashFuncs.updateESCTemperature(wgt)
         wgt.values.EscT_max = 75
     end
 
-	if getGeneralSettings().imperial > 0 then 
-		CorF = "f" 
+	if getGeneralSettings().imperial > 0 then
+		CorF = "f"
 		wgt.values.EscT = (wgt.values.EscT * 1.8) + 32.0
 		wgt.values.EscT_max = (wgt.values.EscT_max * 1.8) + 32.0
 	end
-	
+
     wgt.values.EscT_str = string.format("%d°%s", wgt.values.EscT, CorF)
     wgt.values.EscT_max_str = string.format("+%d°%s", wgt.values.EscT_max, CorF)
 
