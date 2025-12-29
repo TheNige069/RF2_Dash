@@ -50,11 +50,6 @@ local function formatTime(t1, useDays)
 end
 
 function rf2DashFuncs.display_ModelImage(wgt, theBox, lx, ly)
-    -- Craft name
-    local bCraftName = theBox:box({x = lx, y = ly + 75})
-    bCraftName:rectangle({x = 10, y = 20, w = rf2DashFuncs.isizew - 20, h = 20, filled = true, rounded = 8, color = DARKGREY, opacity = 200})
-    bCraftName:label({text = function() return wgt.values.craft_name end,  x = 15, y = 20, font = FS.FONT_8, color = rf2DashFuncs.TextColourItem})
-
     -- Model image
     local bImageArea = theBox:box({x = lx, y = ly})
     bImageArea:rectangle({x = 0, y = 0, w = rf2DashFuncs.isizew, h = rf2DashFuncs.isizeh, thickness = 4, rounded = 15, filled = false, color = GREY})
@@ -63,6 +58,11 @@ function rf2DashFuncs.display_ModelImage(wgt, theBox, lx, ly)
             return wgt.values.img_last_name
         end
     })
+    
+    -- Craft name
+    local bCraftName = theBox:box({x = lx, y = ly + 75})
+    bCraftName:rectangle({x = 10, y = 20, w = rf2DashFuncs.isizew - 20, h = 20, filled = true, rounded = 8, color = DARKGREY, opacity = 200})
+    bCraftName:label({text = function() return wgt.values.craft_name end,  x = 15, y = 20, font = FS.FONT_8, color = rf2DashFuncs.TextColourItem})
 end
 
 -- RX battery or BEC voltage
