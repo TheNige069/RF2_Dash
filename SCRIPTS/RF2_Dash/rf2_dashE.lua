@@ -17,6 +17,7 @@ wgt.values = {
     vbatOnConnect = nil,  -- Voltage on connection
     --vcel = 0,
     cell_percent = 0,
+    cellCount = 0,
     volt = 0,
     curr = 0,
     curr_max = 0,
@@ -153,10 +154,13 @@ local function calcInitialBattVoltage()
         if ((wgt.values.colourMAHGaugeInner == nil or wgt.values.colourMAHGaugeInner == WHITE) and wgt.values.vbatOnConnect ~= nil) then
             local colourMAHGaugeInner = lcd.RGB(0x000000)
 
-            if rf2DashFuncs.inSimu then 
-                wgt.values.vbatOnConnect = 23.2 
+            if rf2DashFuncs.inSimu then
+                wgt.values.vbatOnConnect = 23.2
             end
-            local cellCount = getSourceValue("Cel#") or 0
+            if wgt.values.cellCount == nil then
+                wgt.values.cellCount = getSourceValue("Cel#") or 0
+            end
+            local cellCount = wgt.values.cellCount
             rf2DashFuncs.log("calcInitialBattVoltage: cellCount: %s", cellCount)
 
             if (cellCount == 0) then cellCount = calcNumCells(wgt.values.vbatOnConnect) end
@@ -174,6 +178,9 @@ local function calcInitialBattVoltage()
             end
             wgt.values.colourMAHGaugeInner = colourMAHGaugeInner
             --rf2DashFuncs.log("Battery voltage colour wgt:  " .. wgt.colourMAHGaugeInner)
+            if wgt.values.cellCount ~= cellCount then
+                wgt.values.cellCount = cellCount
+            end
             wgt.values.needToRebuildUI = true
         end
     end
@@ -196,9 +203,11 @@ local function display_MAHUsedGauge(wgt, theBox, boxSize, gaugeColour)
 	--bCapa:label({x = centre_x - g_thick, y = (boxSize.h / 2) - (2 * g_thick), text = function() return wgt.values.capa_percent.."%" end, font = FS.FONT_8, color = rf2DashFuncs.TextColourItem})
 	bCapa:label({x = centre_x - g_thick, y = (boxSize.h / 2) - (2 * g_thick), text = function() if wgt.values.capaRem_percent == nil then wgt.values.capaRem_percent = 0 end return wgt.values.capaRem_percent .. "%" end, font = FS.FONT_8, color = rf2DashFuncs.TextColourItem})
     -- Capacity used 
-	bCapa:label({x = centre_x - g_thick-10, y = (boxSize.h / 2) - g_thick, text = function() return wgt.values.capa_str end, font = FS.FONT_8, color = rf2DashFuncs.TextColourItem})
+	bCapa:label({x = centre_x - g_thick - 10, y = (boxSize.h / 2) - g_thick, text = function() return wgt.values.capa_str end, font = FS.FONT_8, color = rf2DashFuncs.TextColourItem})
+    -- Cell Count
+	bCapa:label({x = centre_x - g_thick - 5, y = (boxSize.h / 2), text = function() return wgt.values.cellCount .. "cells" end, font = FS.FONT_8, color = rf2DashFuncs.TextColourItem})
     -- Max Capacity
-	bCapa:label({x = centre_x - g_thick-12, y = centre_y + 30, text = function() return wgt.values.capa_max_str end, font = FS.FONT_8, color = rf2DashFuncs.TextColourItem})
+	bCapa:label({x = centre_x - g_thick - 12, y = centre_y + 30, text = function() return wgt.values.capa_max_str end, font = FS.FONT_8, color = rf2DashFuncs.TextColourItem})
     -- Background outer ring
     bCapa:arc({x = centre_x, y = centre_y, radius = g_rad, thickness = g_thick, startAngle = g_angle_min, endAngle = g_angle_max, rounded = true, color = lcd.RGB(0x222222)})
     -- Inner ring
