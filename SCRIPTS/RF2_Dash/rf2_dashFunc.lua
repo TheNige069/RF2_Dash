@@ -1,5 +1,8 @@
 local rf2DashFuncs = {}
 local script_dir = "/SCRIPTS/RF2_Dash/"
+local app_name = "rf2_dash"
+
+rf2DashFuncs.rf2DashFuncsDebug = false
 
 FS = {FONT_38 = XXLSIZE, FONT_16 = DBLSIZE, FONT_12 = MIDSIZE, FONT_8 = 0, FONT_6 = SMLSIZE}
 rf2DashFuncs.inSimu = string.sub(select(2, getVersion()), -4) == "simu"
@@ -124,7 +127,7 @@ function rf2DashFuncs.updateTimeCount(wgt)
 
 	local timerNumber = wgt.options.FlightTimer - 1
 
-	if timerNumber < 0 then 
+	if timerNumber < 0 then
 		return
 	end
 
@@ -264,7 +267,36 @@ function rf2DashFuncs.updateRpm(wgt)
 end
 
 function rf2DashFuncs.log(fmt, ...)
-    print(string.format("[%s] "..fmt, app_name, ...))
+
+    local message = string.format("[%s] "..fmt, app_name, ...)
+    print(message)
+
+    if rf2DashFuncs.rf2DashFuncsDebug == true then
+        local logFileName = "/LOGS/" .. app_name .. ".log"
+        -- Open the file in append mode ("a")
+        local file = io.open(logFileName, "a")
+
+        if file then
+            -- Get current timestamp (optional, but useful for logs)
+            local dt = getDateTime()
+
+            local timestamp = string.format("%02d-%02d-%02d %02d:%02d:%02d", dt.year, dt.mon, dt.day, dt.hour, dt.min, dt.sec) --os.date("%Y-%m-%d %H:%M:%S")
+            local logMessage = timestamp .. ": " .. message .. "\n"
+
+            -- Write the message to the file
+            --file:write(logMessage)
+            io.write(file, logMessage)
+
+            -- Close the file
+            --file:close()
+            io.close(file)
+            --return true -- Success
+        else
+            -- Handle error (e.g., SD card not present, write protected, etc.)
+            print("Error: Could not open SD Card log file for writing")
+            --return false -- Failure
+        end
+    end
     return
 end
 
@@ -387,7 +419,7 @@ function rf2DashFuncs.display_statusbar(wgt, lx, ly, txBatBar)
 		)
 	end
     bStatusBar:label({x = 260, y = 2, text = function() return string.format("TX Batt: %.0f%%", wgt.values.vTXVoltsPercent) end, font = FS.FONT_6, color = WHITE})
-    bStatusBar:label({x = 375, y = 2, text = function() return wgt.values.timeCurrent end, font = FS.FONT_6, color = YELLOW})
+    bStatusBar:label({x = 395, y = 2, text = function() return wgt.values.timeCurrent end, font = FS.FONT_6, color = YELLOW})
 end
 
 function rf2DashFuncs.display_timer(wgt, theBox, lx, ly)
@@ -544,7 +576,7 @@ function rf2DashFuncs.switchNormalCurve(wgt)
 	local crvElec  = 1
 
 	local varEorN = string.sub(craftname, string.len(craftname) - 2)
-	
+
 	if rf2DashFuncs.crvNitro == -1 then getOurCurves() end
 	if rf2DashFuncs.crvElec == -1 then getOurCurves() end
 
@@ -555,7 +587,7 @@ function rf2DashFuncs.switchNormalCurve(wgt)
 	else
 		changeCurve = 0
 	end
-	
+
 	if changeCurve > 0 then
 	-- TODO: Change this so that it searches for Throttle 
 		local inLineThrottle = model.getInput(inNumber, 1)	-- On my settings, this is Throttle - Normal curve

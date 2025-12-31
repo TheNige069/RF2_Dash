@@ -4,8 +4,6 @@ local baseDir = "/WIDGETS/rf2_dashE/"
 
 local wgt = {}
 
-local WHITE = lcd.RGB(255, 255, 255)
-
 wgt.values = {
     craft_name = "Not connected",
     timer_str = "--:--",
@@ -15,9 +13,12 @@ wgt.values = {
 
     vbat = 0,
     vbatOnConnect = nil,  -- Voltage on connection
-    --vcel = 0,
     cell_percent = 0,
     cellCount = 0,
+    cellCountTelem = 0,
+    cellCountCalc = 0,
+    cellCountFromTelemetry = false,
+
     volt = 0,
     curr = 0,
     curr_max = 0,
@@ -123,7 +124,9 @@ local function calcNumCells(theVoltage)
 
     local topCellVoltage = 1
 
-    if (theVoltage == nil or theVoltage == 0) and (wgt.values.vbat ~= nil or wgt.values.vbat > 0) then theVoltage = wgt.values.vbat end
+    if (theVoltage == nil or theVoltage == 0) and (wgt.values.vbat ~= nil or wgt.values.vbat > 0) then 
+        theVoltage = wgt.values.vbat 
+    end
 
     if wgt.options.BattType == 1 then
         topCellVoltage = 4.3 -- lipo
@@ -153,17 +156,17 @@ local function calcInitialBattVoltage()
     if wgt.is_connected then
         if ((wgt.values.colourMAHGaugeInner == nil or wgt.values.colourMAHGaugeInner == WHITE) and wgt.values.vbatOnConnect ~= nil) then
             local colourMAHGaugeInner = lcd.RGB(0x000000)
+            local cellCount = wgt.values.cellCountTelem
 
-            if rf2DashFuncs.inSimu then
-                wgt.values.vbatOnConnect = 23.2
+            if cellCount == 0 then
+                cellCount = math.max(cellCount, wgt.values.cellCountCalc)
             end
-            if wgt.values.cellCount == nil then
-                wgt.values.cellCount = getSourceValue("Cel#") or 0
-            end
-            local cellCount = wgt.values.cellCount
+
             rf2DashFuncs.log("calcInitialBattVoltage: cellCount: %s", cellCount)
 
-            if (cellCount == 0) then cellCount = calcNumCells(wgt.values.vbatOnConnect) end
+            if (cellCount <= 1) then 
+                cellCount = calcNumCells(wgt.values.vbatOnConnect) 
+            end
             rf2DashFuncs.log("calcInitialBattVoltage: cellCount: %s", cellCount)
 
             if (wgt.values.vbatOnConnect < (cellCount * 3.818)) then
@@ -177,7 +180,6 @@ local function calcInitialBattVoltage()
                 rf2DashFuncs.log("Battery voltage greater than 80%%")
             end
             wgt.values.colourMAHGaugeInner = colourMAHGaugeInner
-            --rf2DashFuncs.log("Battery voltage colour wgt:  " .. wgt.colourMAHGaugeInner)
             if wgt.values.cellCount ~= cellCount then
                 wgt.values.cellCount = cellCount
             end
@@ -201,38 +203,68 @@ local function display_MAHUsedGauge(wgt, theBox, boxSize, gaugeColour)
     bCapa:label({text = "MA Used",  x = 0, y = 0, font = FS.FONT_6, color = rf2DashFuncs.TextColourTitle})
     -- Capacity percentage
 	--bCapa:label({x = centre_x - g_thick, y = (boxSize.h / 2) - (2 * g_thick), text = function() return wgt.values.capa_percent.."%" end, font = FS.FONT_8, color = rf2DashFuncs.TextColourItem})
-	bCapa:label({x = centre_x - g_thick, y = (boxSize.h / 2) - (2 * g_thick), text = function() if wgt.values.capaRem_percent == nil then wgt.values.capaRem_percent = 0 end return wgt.values.capaRem_percent .. "%" end, font = FS.FONT_8, color = rf2DashFuncs.TextColourItem})
+	bCapa:label({x = centre_x - g_thick, y = (boxSize.h / 2) - (2 * g_thick), text = function() 
+        if wgt.values.capaRem_percent == nil then 
+            wgt.values.capaRem_percent = 0 
+        end 
+        return wgt.values.capaRem_percent .. "%" 
+    end, font = FS.FONT_8, color = rf2DashFuncs.TextColourItem})
     -- Capacity used 
-	bCapa:label({x = centre_x - g_thick - 10, y = (boxSize.h / 2) - g_thick, text = function() return wgt.values.capa_str end, font = FS.FONT_8, color = rf2DashFuncs.TextColourItem})
+	bCapa:label({x = centre_x - g_thick - 10, y = (boxSize.h / 2) - g_thick, text = function() 
+        return wgt.values.capa_str 
+    end, font = FS.FONT_8, color = rf2DashFuncs.TextColourItem})
     -- Cell Count
-	bCapa:label({x = centre_x - g_thick - 5, y = (boxSize.h / 2), text = function() return wgt.values.cellCount .. "cells" end, font = FS.FONT_8, color = rf2DashFuncs.TextColourItem})
+    if wgt.values.cellCountFromTelemetry == true then
+	    bCapa:label({x = centre_x - g_thick - 5, y = (boxSize.h / 2), text = function() 
+            return wgt.values.cellCount .. "cells" 
+        end, font = FS.FONT_8, color = GREEN})
+	else
+        bCapa:label({x = centre_x - g_thick - 5, y = (boxSize.h / 2), text = function() 
+            return wgt.values.cellCount .. "cells" 
+        end, font = FS.FONT_8, color = rf2DashFuncs.TextColourItem})
+    end
     -- Max Capacity
-	bCapa:label({x = centre_x - g_thick - 12, y = centre_y + 30, text = function() return wgt.values.capa_max_str end, font = FS.FONT_8, color = rf2DashFuncs.TextColourItem})
+	bCapa:label({x = centre_x - g_thick - 12, y = centre_y + 30, text = function() 
+        return wgt.values.capa_max_str 
+    end, font = FS.FONT_8, color = rf2DashFuncs.TextColourItem})
     -- Background outer ring
     bCapa:arc({x = centre_x, y = centre_y, radius = g_rad, thickness = g_thick, startAngle = g_angle_min, endAngle = g_angle_max, rounded = true, color = lcd.RGB(0x222222)})
     -- Inner ring
     -- Change inner ring colour based on initial voltage. If it's above 80% then green, orange if > 40%, anything below 40% is red
-    bCapa:arc({x = centre_x, y = centre_y, radius = gm_rad, thickness = gm_thick, startAngle = g_angle_min, endAngle = function() return calEndAngle(wgt.values.capa_max_percent, g_angle_min, g_angle_max) end, color = wgt.values.colourMAHGaugeInner, opacity = 180})
+    bCapa:arc({x = centre_x, y = centre_y, radius = gm_rad, thickness = gm_thick, startAngle = g_angle_min, endAngle = function() 
+        return calEndAngle(wgt.values.capa_max_percent, g_angle_min, g_angle_max) 
+    end, color = wgt.values.colourMAHGaugeInner, opacity = 180})
     -- Used capacity ring
-    bCapa:arc({x = centre_x, y = centre_y, radius = g_rad, thickness = g_thick, startAngle = g_angle_min, endAngle = function() return calEndAngle(wgt.values.capaRem_percent, g_angle_min, g_angle_max) end, color = gaugeColour})
+    bCapa:arc({x = centre_x, y = centre_y, radius = g_rad, thickness = g_thick, startAngle = g_angle_min, endAngle = function() 
+        return calEndAngle(wgt.values.capaRem_percent, g_angle_min, g_angle_max) 
+    end, color = gaugeColour})
 end
 
 local function displayESCTemperature(wgt, theBox, lx, ly)
     local escT = theBox:box({x = lx, y = ly})
+
     escT:label({text = "ESC Temp", x = 0, y = 0, font = FS.FONT_6, color = rf2DashFuncs.TextColourTitle})
-    escT:label({text = function() return wgt.values.EscT_str end , x = 0, y = 15, font = FS.FONT_12, color = rf2DashFuncs.TextColourItem})
+    escT:label({text = function() 
+        return wgt.values.EscT_str 
+    end , x = 0, y = 15, font = FS.FONT_12, color = rf2DashFuncs.TextColourItem})
 end
 
 local function display_BatteryVoltage(wgt, theBox, lx, ly)
     local bRXVolts = theBox:box({x = lx, y = ly})
+
     bRXVolts:label({text = "Batt Voltage", x = 0, y = 0, font = FS.FONT_6, color = rf2DashFuncs.TextColourTitle})
-    bRXVolts:label({text = function() return string.format("%.02fv", wgt.values.vbat) end , x = 0, y = 15, font = FS.FONT_12, color = wgt.values.colourMAHGaugeInner})
+    bRXVolts:label({text = function() 
+        return string.format("%.02fv", wgt.values.vbat) 
+    end , x = 0, y = 15, font = FS.FONT_12, color = wgt.values.colourMAHGaugeInner})
 end
 
 local function build_ui_electric(wgt)
     local dx = 20
 
-    if wgt.values.colourMAHGaugeInner == nil or wgt.values.colourMAHGaugeInner == WHITE then calcInitialBattVoltage(wgt) end
+    if wgt.values.colourMAHGaugeInner == nil or wgt.values.colourMAHGaugeInner == WHITE then 
+        rf2DashFuncs.log("260: build_ui_electric %f, refresh: %s", wgt.values.colourMAHGaugeInner, wgt.values.needToRebuildUI)
+        calcInitialBattVoltage(wgt) 
+    end
 
     lvgl.clear()
 
@@ -245,7 +277,6 @@ local function build_ui_electric(wgt)
 	rf2DashFuncs.display_RPM(wgt, pMain, 1, 140, FS.FONT_16)
 	rf2DashFuncs.display_ModelImage(wgt, pMain, 325, 5)
     rf2DashFuncs.display_NoConnection(wgt, 325, 10)
-	rf2DashFuncs.display_FailToArmFlags(wgt, pMain, 100, 25)
 	rf2DashFuncs.display_statusbar(wgt, 0, wgt.zone.h - 20, 0)
 	rf2DashFuncs.display_RXVoltage(wgt, pMain, 0, 205, false)
 
@@ -255,13 +286,16 @@ local function build_ui_electric(wgt)
 	display_MAHUsedGauge(wgt, pMain, {x = 170, y = 0, h = 180, w = 180}, lcd.RGB(0x62FF3F))
 	displayESCTemperature(wgt, pMain, 110, 140)
 	display_BatteryVoltage(wgt, pMain, 200, 140)
+	rf2DashFuncs.display_FailToArmFlags(wgt, pMain, 100, 25)
 end
 
 -- If capa_percent is divisible by BatteryCallout then let them know
 local announcedBatPercent = false
 
 local function readoutBatteryPercentage(wgt)
-	if (wgt.options.BatteryCallout == 0) then wgt.options.BatteryCallout = 10 end
+	if (wgt.options.BatteryCallout == 0) then 
+        wgt.options.BatteryCallout = 10 
+    end
 
 	if (math.fmod(wgt.values.capaRem_percent, wgt.options.BatteryCallout) == 0)  then
 		if (announcedBatPercent == false) then 
@@ -274,42 +308,40 @@ local function readoutBatteryPercentage(wgt)
 end
 
 function updateCell(wgt)
-    local vbat = getSourceValue("Vbat") or 0.0
-
-    if (wgt.values.vbatOnConnect == nil) then wgt.values.vbatOnConnect = vbat end
-    if rf2DashFuncs.inSimu then wgt.values.vbatOnConnect = 22.29 end
-
-    --if vbat == nil then vbat = 0 end
+    local vbat = wgt.values.vbat --getSourceValue("Vbat") or 0.0
 
     if rf2DashFuncs.inSimu then
         vbat = 22.2
     end
 
-    wgt.values.vbat = vbat
+    if (wgt.values.vbatOnConnect == nil) then 
+        wgt.values.vbatOnConnect = vbat 
+    end
+    if rf2DashFuncs.inSimu then 
+        wgt.values.vbatOnConnect = 22.29 
+    end
+
+    wgt.values.vbatOnConnect = math.max(wgt.values.vbatOnConnect, vbat)
 end
 
 local function updateMAUsed(wgt)
     local capa_top = wgt.options.capacityTop
-    local capa = getSourceValue("Capa")
-    if capa == nil then capa = 0 end
-
+    local capa = wgt.values.capa
     local capa_max = wgt.options.BattCapa --getValue("Capa+")
 	capa_max = math.max(capa_max, capa)
 
     --BattCapMin %
     local battCapCanUse = ((100 - wgt.options.BattCapMin) / 100) * capa_max
 
-    wgt.values.capa = capa
-    --wgt.values.capaRem = capa_max - capa
-    --wgt.values.capaRem_percent = math.min(100, math.floor(100 * (wgt.values.capaRem / capa_max)))
     wgt.values.capaRem = battCapCanUse - capa
     wgt.values.capaRem_percent = math.min(100, math.floor(100 * (wgt.values.capaRem / battCapCanUse)))
-    if (wgt.values.capaRem_percent < 0) then wgt.values.capaRem_percent = 0 end
+    if (wgt.values.capaRem_percent < 0) then 
+        wgt.values.capaRem_percent = 0 
+    end
 
     wgt.values.capa_max = capa_max
     wgt.values.capa_percent = math.min(100, math.floor(100 * (capa / capa_max)))
     wgt.values.capa_max_percent = math.min(100, math.floor(100 * (capa_max / capa_max)))
-    --wgt.values.capa_str = string.format("%0000dma", wgt.values.capa)
     wgt.values.capa_str = string.format("%0000dma", wgt.values.capaRem)
     wgt.values.capa_max_str = string.format("%0000dma", wgt.values.capa_max)
 
@@ -318,35 +350,28 @@ end
 
 local function updateCurr(wgt)
     local curr_top = wgt.options.currTop
-    local curr = getSourceValue("Curr")
-    if curr == nil then curr = 0 end
-
-    local curr_max = getSourceValue("Curr+")
-    if curr_max == nil then curr_max = 0 end
-
-	curr_max = math.max(curr_max, curr)
+    local curr = wgt.values.curr
+    local curr_max = wgt.values.curr_max
 
     if rf2DashFuncs.inSimu then
         curr = 205
         curr_max = 255
     end
 
-    wgt.values.curr = curr
-    wgt.values.curr_max = curr_max
     wgt.values.curr_percent = math.min(100, math.floor(100 * (curr / curr_top)))
     wgt.values.curr_max_percent = math.min(100, math.floor(100 * (curr_max / curr_top)))
     wgt.values.curr_str = string.format("%0.01fA", wgt.values.curr)
     wgt.values.curr_max_str = string.format("%0.01fA", wgt.values.curr_max)
 end
 
-local function updateImage(wgt)
-    local newCraftName = wgt.values.craft_name
+local function updateImage(theWgt)
+    local newCraftName = theWgt.values.craft_name
 
-    if newCraftName == wgt.values.img_craft_name_for_image then
+    if newCraftName == theWgt.values.img_craft_name_for_image then
         return
     end
 
-    local imageName = script_dir .. "/img/" .. newCraftName..".png"
+    local imageName = script_dir .. "img/" .. newCraftName..".png"
 
     if rf2DashFuncs.isFileExist(imageName) == false then
         imageName = "/IMAGES/" .. model.getInfo().bitmap
@@ -356,10 +381,51 @@ local function updateImage(wgt)
         end
     end
 
-    if imageName ~= wgt.values.img_last_name then
-        wgt.values.img_last_name = imageName
-        wgt.values.img_craft_name_for_image = newCraftName
+    if imageName ~= theWgt.values.img_last_name then
+        theWgt.values.img_last_name = imageName
+        theWgt.values.img_craft_name_for_image = newCraftName
     end
+end
+
+local function updateTelemetryValues(theWgt)
+    local curr = getSourceValue("Curr")
+    local curr_max = getSourceValue("Curr+")
+    local cellCount = getSourceValue("Cel#")
+    local capa = getSourceValue("Capa")
+    local vbat = getSourceValue("Vbat")
+
+    if curr == nil then 
+        curr = 0 
+    end
+    theWgt.values.curr = curr
+
+    if curr_max == nil then 
+        curr_max = 0 
+    end
+    curr_max = math.max(curr_max, curr)
+    theWgt.values.curr_max = curr_max
+
+    if cellCount == nil then 
+        cellCount = 0 
+    end
+    theWgt.values.cellCountTelem = cellCount
+    theWgt.values.cellCount = math.max(cellCount, theWgt.values.cellCountCalc)
+    if theWgt.values.cellCountCalc > theWgt.values.cellCountTelem then
+        wgt.values.cellCountFromTelemetry = false
+    else
+        wgt.values.cellCountFromTelemetry = true
+    end
+
+    if capa == nil then 
+        capa = 0 
+    end
+    theWgt.values.capa = capa
+
+    if vbat == nil then 
+        vbat = 0 
+    end
+    theWgt.values.vbat = vbat
+
 end
 
 local function refreshUINoConn(wgt)
@@ -368,6 +434,8 @@ local function refreshUINoConn(wgt)
 end
 
 local function refreshUI(wgt)
+    updateTelemetryValues(wgt)
+
     rf2DashFuncs.updateCraftName(wgt)
     updateImage(wgt)
     rf2DashFuncs.updateTimeCount(wgt)
@@ -389,7 +457,9 @@ end
 ---------------------------------------------------------------------------------------
 
 local function update(wgt, options)
-    if (wgt == nil) then return end
+    if (wgt == nil) then 
+        return 
+    end
     wgt.options = options
     wgt.not_connected_error = "Not connected"
 
@@ -409,7 +479,9 @@ local function background(wgt)
 end
 
 local function refresh(wgt, event, touchState)
-    if (wgt == nil) then return end
+    if (wgt == nil) then 
+        return 
+    end
 
     wgt.is_connected = (getRSSI() > 0)
     -- wgt.not_connected_error = "Not connected"

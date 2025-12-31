@@ -69,8 +69,14 @@ local function display_FlightMode(theBox, lx, ly)
 end
 
 local function build_ui_nitro(wgt)
-    if (wgt == nil) then rf2DashFuncs.log("refresh(nil)") return end;
-    if (wgt.options == nil) then rf2DashFuncs.log("refresh(wgt.options=nil)") return end;
+    if (wgt == nil) then 
+        rf2DashFuncs.log("refresh(nil)") 
+        return 
+    end
+    if (wgt.options == nil) then 
+        rf2DashFuncs.log("refresh(wgt.options=nil)") 
+        return 
+    end
 
     lvgl.clear()
 
@@ -83,12 +89,12 @@ local function build_ui_nitro(wgt)
 	rf2DashFuncs.display_RPM(wgt, pMain, 140, 115, FS.FONT_38)
 	rf2DashFuncs.display_ModelImage(wgt, pMain, 325, 5)
     rf2DashFuncs.display_NoConnection(wgt, 325, 10)
-	rf2DashFuncs.display_FailToArmFlags(wgt, pMain, 100, 25)
 	rf2DashFuncs.display_statusbar(wgt, 0, wgt.zone.h - 20, 0)
 	rf2DashFuncs.display_RXVoltage(wgt, pMain, 0, 205, false)
 	display_FlightMode(pMain, 150, 195)
 	rf2DashFuncs.display_ArmState(wgt, pMain, 140, 5)
 	rf2DashFuncs.display_GovernorState(wgt, pMain, 325, 130)
+	rf2DashFuncs.display_FailToArmFlags(wgt, pMain, 100, 25)
 end
 
 local function updateImage(wgt)
@@ -135,7 +141,9 @@ local function refreshUI(wgt)
 end
 
 local function update(wgt, options)
-    if (wgt == nil) then return end
+    if (wgt == nil) then 
+        return 
+    end
     wgt.options = options
     wgt.not_connected_error = "Not connected"
 
@@ -163,7 +171,9 @@ local function background(wgt)
 end
 
 local function refresh(wgt, event, touchState)
-    if (wgt == nil) then return end
+    if (wgt == nil) then 
+        return 
+    end
 
     wgt.is_connected = (getRSSI() > 0)
 
