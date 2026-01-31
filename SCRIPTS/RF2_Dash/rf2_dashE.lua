@@ -12,7 +12,7 @@ wgt.values = {
     rpm_str = "0",
 
     vbat = 0,
-    vbatOnConnect = nil,  -- Voltage on connection
+    vbatOnConnect = -1, --nil,  -- Voltage on connection
     cell_percent = 0,
     cellCount = 0,
     cellCountTelem = 0,
@@ -41,7 +41,7 @@ wgt.values = {
     EscT_percent = 0,
     EscT_max_percent = 0,
 
-    img_box = nil,
+    --img_box = nil,
     img_last_name = "---",
     img_craft_name_for_image = "---",
 
@@ -140,12 +140,16 @@ local function calcNumCells(theVoltage)
         topCellVoltage = 4.3 -- default to lipo
     end
 
-    for i = 1, 14 do
-        rf2DashFuncs.log("calcNumCells %s | %s", theVoltage, topCellVoltage * i)
-        if theVoltage < topCellVoltage * i then
-            rf2DashFuncs.log("calcNumCells %s --> %s", theVoltage, i)
-            return i
+    if wgt.values.cellCountTelem == 0 then
+        for i = 1, 14 do
+            rf2DashFuncs.log("calcNumCells %s | %s", theVoltage, topCellVoltage * i)
+            if theVoltage < topCellVoltage * i then
+                rf2DashFuncs.log("calcNumCells %s --> %s", theVoltage, i)
+                return i
+            end
         end
+    else
+        return wgt.values.cellCountTelem
     end
 
     rf2DashFuncs.log("calcNumCells: no match found: " .. theVoltage)
@@ -154,7 +158,8 @@ end
 
 local function calcInitialBattVoltage()
     if wgt.is_connected then
-        if ((wgt.values.colourMAHGaugeInner == nil or wgt.values.colourMAHGaugeInner == WHITE) and wgt.values.vbatOnConnect ~= nil) then
+        --rf2DashFuncs.log("161: calcInitialBattVoltage: cellCount: %s, vbatOnConnect: %s, White: %s", wgt.values.cellCountTelem, wgt.values.vbatOnConnect, wgt.values.colourMAHGaugeInner == WHITE)
+        if ((wgt.values.colourMAHGaugeInner == nil or wgt.values.colourMAHGaugeInner == WHITE) and wgt.values.vbatOnConnect > 0) then --~= nil) then
             local colourMAHGaugeInner = lcd.RGB(0x000000)
             local cellCount = wgt.values.cellCountTelem
 
@@ -167,7 +172,7 @@ local function calcInitialBattVoltage()
             if (cellCount <= 1) then 
                 cellCount = calcNumCells(wgt.values.vbatOnConnect) 
             end
-            rf2DashFuncs.log("calcInitialBattVoltage: cellCount: %s", cellCount)
+            rf2DashFuncs.log("175: calcInitialBattVoltage: cellCount: %s, vbatOnConnect: %s", cellCount, wgt.values.vbatOnConnect)
 
             if (wgt.values.vbatOnConnect < (cellCount * 3.818)) then
                 colourMAHGaugeInner = lcd.RGB(255, 0, 0)    -- 0xFF0000
@@ -262,7 +267,7 @@ local function build_ui_electric(wgt)
     local dx = 20
 
     if wgt.values.colourMAHGaugeInner == nil or wgt.values.colourMAHGaugeInner == WHITE then 
-        rf2DashFuncs.log("260: build_ui_electric %f, refresh: %s", wgt.values.colourMAHGaugeInner, wgt.values.needToRebuildUI)
+        --rf2DashFuncs.log("260: build_ui_electric %f, refresh: %s", wgt.values.colourMAHGaugeInner, wgt.values.needToRebuildUI)
         calcInitialBattVoltage(wgt) 
     end
 
@@ -308,7 +313,7 @@ local function readoutBatteryPercentage(wgt)
 end
 
 function updateCell(wgt)
-    local vbat = wgt.values.vbat --getSourceValue("Vbat") or 0.0
+--[[    local vbat = wgt.values.vbat --getSourceValue("Vbat") or 0.0
 
     if rf2DashFuncs.inSimu then
         vbat = 22.2
@@ -321,7 +326,7 @@ function updateCell(wgt)
         wgt.values.vbatOnConnect = 22.29 
     end
 
-    wgt.values.vbatOnConnect = math.max(wgt.values.vbatOnConnect, vbat)
+    wgt.values.vbatOnConnect = math.max(wgt.values.vbatOnConnect, vbat)]]
 end
 
 local function updateMAUsed(wgt)
@@ -387,44 +392,171 @@ local function updateImage(theWgt)
     end
 end
 
+local function updateESCTemperature(wgt)
+    local tempTop = wgt.options.tempTop
+	local CorF = "c"
+
+    wgt.values.EscT = getSourceValue("Tesc")
+    if wgt.values.EscT == nil then 
+        wgt.values.EscT = 0 
+    end
+    wgt.values.EscT_max = getSourceValue("Tesc+")
+    if wgt.values.EscT_max == nil then 
+        wgt.values.EscT_max = 0 
+    end
+
+    if rf2DashFuncs.inSimu then
+        wgt.values.EscT = 60
+        wgt.values.EscT_max = 75
+    end
+
+	if getGeneralSettings().imperial > 0 then
+		CorF = "f"
+		wgt.values.EscT = (wgt.values.EscT * 1.8) + 32.0
+		wgt.values.EscT_max = (wgt.values.EscT_max * 1.8) + 32.0
+	end
+
+    wgt.values.EscT_str = string.format("%d°%s", wgt.values.EscT, CorF)
+    wgt.values.EscT_max_str = string.format("+%d°%s", wgt.values.EscT_max, CorF)
+
+    wgt.values.EscT_percent = math.min(100, math.floor(100 * (wgt.values.EscT / tempTop)))
+    wgt.values.EscT_max_percent = math.min(100, math.floor(100 * (wgt.values.EscT_max / tempTop)))
+end
+
+local function getSensorFieldInfo(sensorName)
+    local fieldInfo = getFieldInfo(sensorName)
+    if fieldInfo == nil then
+        rf2DashFuncs.log("getSensorFieldInfo: Sensor '" .. sensorName .. "' is missing")
+    end
+    return fieldInfo
+end
+
+local function deleteme(wgt)
+    local defaultPcntSensor = "Bat%"
+    local defaultMahSensor = "Capa"
+
+    local capa = -1
+    local batPcnt = -1
+
+    local fi = getSensorFieldInfo(defaultPcntSensor)
+    wgt.sensorPcntId = fi and fi.id or 0
+    if wgt.sensorPcntId ~= 0 then batPcnt = getValue(wgt.sensorPcntId) end
+    --rf2DashFuncs.log("deleteme:: Battery%% wgt.sensorPcntId: %s, id: %s, name: %s, desc: %s, unit: %s, batPcnt: %s", wgt.sensorPcntId, fi.id, fi.name, fi.desc, fi.unit, batPcnt)
+
+    local fi = getSensorFieldInfo(defaultMahSensor)
+    wgt.sensorMahId = fi and fi.id or 0
+    if wgt.sensorMahId ~= 0 then capa = getValue(wgt.sensorMahId) end 
+    --rf2DashFuncs.log("deleteme:: Battery%% wgt.sensorMahId: %s, id: %s, name: %s, desc: %s, unit: %s, capa: %s", wgt.sensorMahId, fi.id, fi.name, fi.desc, fi.unit, capa)
+
+end
+
+wgt.sensors = {
+    BatPcnt = "Bat%",
+    Current = "Curr",
+    CurrMax = "Curr+",
+    CellCnt = "Cel#",
+    MAH = "Capa",
+    VBat = "Vbat",
+
+    BatPcntID = -1,
+    CurrentID = -1,
+    CurrMaxID = -1,
+    CellCntID = -1,
+    MAHID = -1,
+    VBatID = -1,
+}
+
 local function updateTelemetryValues(theWgt)
-    local curr = getSourceValue("Curr")
-    local curr_max = getSourceValue("Curr+")
-    local cellCount = getSourceValue("Cel#")
-    local capa = getSourceValue("Capa")
-    local vbat = getSourceValue("Vbat")
 
-    if curr == nil then 
-        curr = 0 
-    end
-    theWgt.values.curr = curr
+    local curr --= getSourceValue("Curr")
+    local curr_max --= getSourceValue("Curr+")
+    local cellCount --= getSourceValue("Cel#")
+    local capa --= getSourceValue("Capa")
+    local vbat --= getSourceValue("Vbat")
 
-    if curr_max == nil then 
-        curr_max = 0 
+    local sfi = getSensorFieldInfo(wgt.sensors.BatPcnt)
+    wgt.sensors.BatPcntID = sfi and sfi.id or 0
+    if wgt.sensors.BatPcntID ~= 0 then 
+        batPcnt = getSourceValue(wgt.sensors.BatPcntID) 
     end
+
+    local sfi = getSensorFieldInfo(wgt.sensors.Current)
+    wgt.sensors.CurrentID = sfi and sfi.id or 0
+    if wgt.sensors.CurrentID ~= 0 then 
+        curr = getSourceValue(wgt.sensors.CurrentID) 
+    end
+
+    local sfi = getSensorFieldInfo(wgt.sensors.CurrMax)
+    wgt.sensors.CurrMaxID = sfi and sfi.id or 0
+    if wgt.sensors.CurrMaxID ~= 0 then 
+        curr_max = getSourceValue(wgt.sensors.CurrMaxID) 
+    end
+
+    local sfi = getSensorFieldInfo(wgt.sensors.CellCnt)
+    wgt.sensors.CellCntID = sfi and sfi.id or 0
+    if wgt.sensors.CellCntID ~= 0 then 
+        cellCount = getSourceValue(wgt.sensors.CellCntID) 
+    end
+
+    local sfi = getSensorFieldInfo(wgt.sensors.MAH)
+    wgt.sensors.MAHID = sfi and sfi.id or 0
+    if wgt.sensors.MAHID ~= 0 then 
+        capa = getSourceValue(wgt.sensors.MAHID) 
+    end
+
+    local sfi = getSensorFieldInfo(wgt.sensors.VBat)
+    wgt.sensors.VBatID = sfi and sfi.id or 0
+    if wgt.sensors.VBatID ~= 0 then 
+        vbat = getSourceValue(wgt.sensors.VBatID) 
+    end
+
+    deleteme(wgt)
+
     curr_max = math.max(curr_max, curr)
-    theWgt.values.curr_max = curr_max
 
-    if cellCount == nil then 
-        cellCount = 0 
+    theWgt.values.curr = curr    
+    theWgt.values.curr_max = curr_max
+    theWgt.values.capa = capa
+    theWgt.values.vbat = vbat
+
+    local vbatOnConnect = math.max(theWgt.values.vbatOnConnect, vbat)
+
+    if theWgt.values.vbatOnConnect ~= vbatOnConnect then
+        rf2DashFuncs.log("updateTelemetryValues: colourMAHGaugeInner = nil")
+        theWgt.values.colourMAHGaugeInner = nil
+        theWgt.values.vbatOnConnect = vbatOnConnect
+    end
+
+    if rf2DashFuncs.inSimu then
+        -- Get the current flight mode number
+        local current_fm = getFlightMode() 
+        
+        local gv9Val = model.getGlobalVariable(8, current_fm) -- GV9 used for cell count
+        local gv8Val = model.getGlobalVariable(7, current_fm) -- GV8 used for Initial battery voltage
+
+        if gv9Val then
+            cellCount = gv9Val
+        end
+
+        if gv8Val then
+            theWgt.values.vbatOnConnect = gv8Val
+        end
     end
     theWgt.values.cellCountTelem = cellCount
     theWgt.values.cellCount = math.max(cellCount, theWgt.values.cellCountCalc)
-    if theWgt.values.cellCountCalc > theWgt.values.cellCountTelem then
-        wgt.values.cellCountFromTelemetry = false
-    else
+    --if theWgt.values.cellCountCalc > theWgt.values.cellCountTelem then
+    if theWgt.values.cellCountTelem > 0 then
+        --rf2DashFuncs.log("cellCountTelem == true")
+        if theWgt.values.cellCountFromTelemetry == false then
+            wgt.values.needToRebuildUI = true
+        end
         wgt.values.cellCountFromTelemetry = true
+    else
+        if theWgt.values.cellCountFromTelemetry == true then
+            wgt.values.needToRebuildUI = true
+        end
+        wgt.values.cellCountFromTelemetry = false
     end
-
-    if capa == nil then 
-        capa = 0 
-    end
-    theWgt.values.capa = capa
-
-    if vbat == nil then 
-        vbat = 0 
-    end
-    theWgt.values.vbat = vbat
 
 end
 
@@ -449,7 +581,7 @@ local function refreshUI(wgt)
 	rf2DashFuncs.updateELRS(wgt)
     rf2DashFuncs.updateArm(wgt)
 	rf2DashFuncs.updateVbec(wgt)
-    rf2DashFuncs.updateESCTemperature(wgt)
+    updateESCTemperature(wgt)
 
 	refreshUINoConn(wgt)
 end

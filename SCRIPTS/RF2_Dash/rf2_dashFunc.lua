@@ -30,11 +30,11 @@ local function formatTime(t1, useDays)
 
     local time_str
     if dd == 0 and hh == 0 then
-      -- less then 1 hour, 59:59
+      -- less than 1 hour, 59:59
       time_str = string.format("%02d:%02d", mm, ss)
 
     elseif dd == 0 then
-      -- lass then 24 hours, 23:59:59
+      -- lass than 24 hours, 23:59:59
       time_str = string.format("%02d:%02d:%02d", hh, mm, ss)
     else
       -- more than 24 hours
@@ -92,7 +92,9 @@ function rf2DashFuncs.updateVbec(wgt)
 
     wgt.values.vBecPercent = math.floor(100 - (100 * (wgt.values.vBecMax - wgt.values.vBecUsed) // (wgt.values.vBecMax - wgt.values.vBecMin)))
 
-	if wgt.values.vBecPercent > 100 then wgt.values.vBecPercent = 100 end
+	if wgt.values.vBecPercent > 100 then 
+        wgt.values.vBecPercent = 100 
+    end
 
     local p = wgt.values.vBecPercent
     if (p < 10) then
@@ -141,7 +143,9 @@ end
 -- Current PID profile
 function rf2DashFuncs.updateProfiles(wgt)
     local profile_id = getSourceValue("PID#")
-	if profile_id == nil then profile_id = 0 end
+	if profile_id == nil then 
+        profile_id = 0 
+    end
 
     if profile_id > 0 then
         wgt.values.profile_id = profile_id
@@ -162,7 +166,9 @@ end
 
 local function isArmed()
     local flags = getSourceValue("ARM")
-    if flags == nil then return false end
+    if flags == nil then 
+        return false 
+    end
 
     local armFlag = bit32.band(flags, 0x01)
     return armFlag == 1
@@ -215,7 +221,9 @@ end
 function rf2DashFuncs.updateArm(wgt)
     wgt.values.is_arm = isArmed()
 	local flags = getSourceValue("ARMD")
-    if flags == nil then flags = 0 end
+    if flags == nil then 
+        flags = 0 
+    end
 
     local flagList = armingDisableFlagsList(flags)
 
@@ -258,9 +266,13 @@ end
 
 function rf2DashFuncs.updateRpm(wgt)
     local Hspd = getSourceValue("Hspd")
-	if Hspd == nil then Hspd = 0 end
+	if Hspd == nil then 
+        Hspd = 0 
+    end
 
-    if rf2DashFuncs.inSimu then Hspd = 1800 end
+    if rf2DashFuncs.inSimu then 
+        Hspd = 1800 
+    end
 
     wgt.values.rpm = Hspd
     wgt.values.rpm_str = string.format("%s",Hspd)
@@ -302,11 +314,15 @@ end
 
 function rf2DashFuncs.updateGovState(wgt)
     local govState = getSourceValue("Gov")
-    if govState == nil then govState = 0 end
+    if govState == nil then 
+        govState = 0 
+    end
 
 	local govStateTxt = ""
 
-    if rf2DashFuncs.inSimu then govState = 8 end
+    if rf2DashFuncs.inSimu then 
+        govState = 8 
+    end
 
 	if  govState == 0 then
 		govStateTxt = "Throttle off"	-- GOV_STATE_THROTTLE_OFF
@@ -345,9 +361,6 @@ function rf2DashFuncs.isFileExist(file_name)
 end
 
 function rf2DashFuncs.displayRatePIDprofile(wgt, theBox, lx, ly)
-    --if (lvgl == nil) then log("refresh(nil)") return end
-    --local pMain = lvgl.box({x=0, y=0})
-
     if rf2DashFuncs.inSimu then
         wgt.values.profile_id_str = 3
         wgt.values.rate_id_str = 4
@@ -358,7 +371,9 @@ function rf2DashFuncs.displayRatePIDprofile(wgt, theBox, lx, ly)
         children = {
             -- {type = "rectangle", x = 0, y = 0, w = 40, h = 50, color = YELLOW},
             {type = "label", text = "Profile", x = 0, y = 0, font = FS.FONT_6, color = rf2DashFuncs.TextColourTitle},
-            {type = "label", text = function() return wgt.values.profile_id_str end , x = 5, y = 10, font = FS.FONT_16, color = rf2DashFuncs.TextColourItem},
+            {type = "label", text = function() 
+                return wgt.values.profile_id_str 
+            end , x = 0, y = 10, font = FS.FONT_16, color = rf2DashFuncs.TextColourItem},
         }
     }})
 
@@ -367,7 +382,9 @@ function rf2DashFuncs.displayRatePIDprofile(wgt, theBox, lx, ly)
         children = {
             -- {type = "rectangle", x = 0, y = 0, w = 40, h = 50, color = YELLOW},
             {type = "label", text = "Rate", x = 0, y = 0, font = FS.FONT_6, color = rf2DashFuncs.TextColourTitle},
-            {type = "label", text = function() return wgt.values.rate_id_str end , x = 5, y = 10, font = FS.FONT_16, color = rf2DashFuncs.TextColourItem},
+            {type = "label", text = function() 
+                return wgt.values.rate_id_str 
+            end , x = 0, y = 10, font = FS.FONT_16, color = rf2DashFuncs.TextColourItem},
         }
     }})
 end
@@ -382,12 +399,16 @@ end
 function rf2DashFuncs.display_GovernorState(wgt, theBox, lx, ly)
     local bGS = theBox:box({x = lx, y = ly})
     bGS:label({text = "Governor State", x = 0, y = 0, font = FS.FONT_6, color = rf2DashFuncs.TextColourTitle})
-    bGS:label({text = function() return wgt.values.govState_str end , x = 0, y = 20, font = FS.FONT_8, color = rf2DashFuncs.TextColourItem})
+    bGS:label({text = function() 
+        return wgt.values.govState_str 
+    end , x = 0, y = 20, font = FS.FONT_8, color = rf2DashFuncs.TextColourItem})
 end
 
 function rf2DashFuncs.updateELRS(wgt)
     local valRQLY = getSourceValue("RQly")
-	if valRQLY ~= nil then wgt.values.rqly = valRQLY end
+	if valRQLY ~= nil then 
+        wgt.values.rqly = valRQLY 
+    end
 
     local rqly_min = getSourceValue("RQly-")
 	if rqly_min == nil then
@@ -402,7 +423,9 @@ function rf2DashFuncs.updateELRS(wgt)
 end
 
 function rf2DashFuncs.display_statusbar(wgt, lx, ly, txBatBar)
-	if (lvgl == nil) then log("refresh(nil)") return end
+	if (lvgl == nil) then 
+        return 
+    end
     local bStatusBar = lvgl.box({x = lx, y = ly})
 
     local statusBarColor = lcd.RGB(0x0078D4)
@@ -425,7 +448,9 @@ end
 function rf2DashFuncs.display_timer(wgt, theBox, lx, ly)
 	-- TODO: Open up a menu when pressed. One option "Reset timer"
 	-- Use model.resetTime(wgt.options.timer-1) to reset the timer but this only works in App mode
-    if (lvgl == nil) then rf2DashFuncs.log("refresh(nil)") return end
+    if (lvgl == nil) then 
+        return 
+    end
 
     theBox:build({
         {type = "box", x = lx, y = ly, children = {
@@ -478,38 +503,13 @@ function rf2DashFuncs.display_NoConnection(wgt, lx, ly)
     bNoConn:image({x = 30, y = 0, w = 90, h = 90, file = script_dir.."img/no_connection_wr.png"})
 end
 
-function rf2DashFuncs.updateESCTemperature(wgt)
-    local tempTop = wgt.options.tempTop
-	local CorF = "c"
-
-    wgt.values.EscT = getSourceValue("Tesc")
-    if wgt.values.EscT == nil then wgt.values.EscT = 0 end
-    wgt.values.EscT_max = getSourceValue("Tesc+")
-    if wgt.values.EscT_max == nil then wgt.values.EscT_max = 0 end
-
-    if rf2DashFuncs.inSimu then
-        wgt.values.EscT = 60
-        wgt.values.EscT_max = 75
-    end
-
-	if getGeneralSettings().imperial > 0 then
-		CorF = "f"
-		wgt.values.EscT = (wgt.values.EscT * 1.8) + 32.0
-		wgt.values.EscT_max = (wgt.values.EscT_max * 1.8) + 32.0
-	end
-
-    wgt.values.EscT_str = string.format("%d°%s", wgt.values.EscT, CorF)
-    wgt.values.EscT_max_str = string.format("+%d°%s", wgt.values.EscT_max, CorF)
-
-    wgt.values.EscT_percent = math.min(100, math.floor(100 * (wgt.values.EscT / tempTop)))
-    wgt.values.EscT_max_percent = math.min(100, math.floor(100 * (wgt.values.EscT_max / tempTop)))
-end
-
 -- Transmitter battery voltage
 function rf2DashFuncs.updateTXBatVoltage(wgt)
 	--wgt.values.vTXVolts = getValue(267)	-- This is the "Batt" sensor
 	wgt.values.vTXVolts = getSourceValue("tx-voltage")
-    if wgt.values.vTXVolts == nil then wgt.values.vTXVolts = 0 end
+    if wgt.values.vTXVolts == nil then 
+        wgt.values.vTXVolts = 0 
+    end
 
 	wgt.values.vTXVoltsMax = getGeneralSettings().battMax
 	wgt.values.vTXVoltsMin = getGeneralSettings().battMin
@@ -519,7 +519,9 @@ function rf2DashFuncs.updateTXBatVoltage(wgt)
 
     wgt.values.vTXVoltsPercent = math.floor(100 - (100 * (wgt.values.vTXVoltsMax - wgt.values.vTXVolts) // (wgt.values.vTXVoltsMax - wgt.values.vTXVoltsMin)))
 
-	if wgt.values.vTXVoltsPercent > 100 then wgt.values.vTXVoltsPercent = 100 end
+	if wgt.values.vTXVoltsPercent > 100 then 
+        wgt.values.vTXVoltsPercent = 100 
+    end
 
     local p = wgt.values.vTXVoltsPercent
     if (p < warnPercent) then
@@ -577,8 +579,12 @@ function rf2DashFuncs.switchNormalCurve(wgt)
 
 	local varEorN = string.sub(craftname, string.len(craftname) - 2)
 
-	if rf2DashFuncs.crvNitro == -1 then getOurCurves() end
-	if rf2DashFuncs.crvElec == -1 then getOurCurves() end
+	if rf2DashFuncs.crvNitro == -1 then 
+        getOurCurves() 
+    end
+	if rf2DashFuncs.crvElec == -1 then 
+        getOurCurves() 
+    end
 
 	if varEorN == "_E" then
 		changeCurve = crvNitro
